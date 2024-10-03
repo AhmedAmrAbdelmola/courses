@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الأسئلة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* منع التمرير العمودي في الجسم */
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex-grow: 1; /* يسمح للحاوية بالنمو لملء المساحة المتاحة */
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* يسمح بالتمرير داخل الحاوية */
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .score {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .question-container {
+            margin-bottom: 20px;
+        }
+
+        .question {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        .answer {
+            display: block;
+            margin: 10px auto;
+            padding: 15px;
+            font-size: 1.2em;
+            background: #e7e7e7;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 80%;
+        }
+
+        .correct {
+            background-color: green;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: red;
+            color: white;
+        }
+
+        .next-button {
+            font-size: 1.5em;
+            background-color: yellow;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            border: 2px solid #ccc;
+        }
+
+        .result-container {
+            display: none;
+        }
+
+        .result-message {
+            font-size: 2em;
+        }
+
+        .final-score {
+            font-size: 1.5em;
+        }
+
+        .wrong-answer-container {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .wrong-answer-question {
+            background-color: #ffe6e6;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 80%;
+            max-width: 400px;
+            border: 1px solid red;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .wrong-answer-question .correct-answer {
+            color: green;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>اختبار الأسئلة</h1>
+        <div id="score" class="score">نتيجة: 0</div>
+        <div id="question-count" class="question-count"></div>
+        <div id="question-container" class="question-container"></div>
+        <button id="next-button" class="next-button" style="display:none;">السؤال التالي</button>
+        <div id="result-container" class="result-container">
+            <div id="result-message" class="result-message"></div>
+            <div id="final-score" class="final-score"></div>
+            <div id="wrong-answers" class="wrong-answer-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const questionContainer = document.getElementById('question-container');
+        const scoreDisplay = document.getElementById('score');
+        const nextButton = document.getElementById('next-button');
+        const questionCountDisplay = document.getElementById('question-count');
+        const resultContainer = document.getElementById('result-container');
+        const resultMessage = document.getElementById('result-message');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const wrongAnswersContainer = document.getElementById('wrong-answers');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let wrongAnswers = [];
+        let questions = [
+    {
+        "question": "ما هي أنواع الالتزامات التي يمكن تنفيذها جبريًا؟",
+        "answers": [
+            { "text": "الالتزامات المالية فقط", "correct": true },
+            { "text": "الالتزامات الشخصية", "correct": false },
+            { "text": "الالتزامات الطبيعية", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الالتزامات المالية فقط" }
+    },
+    {
+        "question": "ما هو تأثير الغرامات على المدين؟",
+        "answers": [
+            { "text": "تحسين الأداء", "correct": false },
+            { "text": "زيادة الضغط المالي", "correct": true },
+            { "text": "تعزيز العلاقات التجارية", "correct": false },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "زيادة الضغط المالي" }
+    },
+    {
+        "question": "ما هي العقوبات البديلة الممكنة للمدين؟",
+        "answers": [
+            { "text": "العمل المجتمعي", "correct": true },
+            { "text": "دفع تعويضات", "correct": true },
+            { "text": "الإشراف القضائي", "correct": true },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يمكن أن يؤثر عدم تنفيذ الالتزامات على سمعة المدين؟",
+        "answers": [
+            { "text": "تحسين السمعة", "correct": false },
+            { "text": "فقدان الثقة", "correct": true },
+            { "text": "لا يؤثر", "correct": false },
+            { "text": "زيادة الطلبات", "correct": false }
+        ],
+        "correctAnswer": { "text": "فقدان الثقة" }
+    },
+    {
+        "question": "ما هو تأثير عدم تنفيذ الالتزامات على الاقتصاد الكلي؟",
+        "answers": [
+            { "text": "يؤثر سلبًا على الثقة", "correct": true },
+            { "text": "يحسن من الاستثمار", "correct": false },
+            { "text": "لا يؤثر على الاقتصاد", "correct": false },
+            { "text": "يزيد من التنافس", "correct": false }
+        ],
+        "correctAnswer": { "text": "يؤثر سلبًا على الثقة" }
+    },
+    {
+        "question": "ما هو دور الدولة في تنظيم تنفيذ الالتزامات؟",
+        "answers": [
+            { "text": "فرض العقوبات", "correct": false },
+            { "text": "ضمان حقوق المدينين والدائنين", "correct": true },
+            { "text": "إلغاء الحقوق القانونية", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "ضمان حقوق المدينين والدائنين" }
+    },
+    {
+        "question": "كيف يمكن تحسين نظام التنفيذ الجبري؟",
+        "answers": [
+            { "text": "بتقليل الإجراءات", "correct": true },
+            { "text": "بزيادة الوعي القانوني", "correct": true },
+            { "text": "بتعزيز حقوق الأطراف", "correct": true },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هي الأساليب المستخدمة لضمان تنفيذ الالتزامات؟",
+        "answers": [
+            { "text": "الغرامات", "correct": true },
+            { "text": "الحجز", "correct": true },
+            { "text": "الإجراءات القانونية", "correct": true },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يمكن للدائن حماية حقوقه في حالة عدم تنفيذ المدين؟",
+        "answers": [
+            { "text": "من خلال التهديد", "correct": false },
+            { "text": "من خلال الإجراءات القانونية", "correct": true },
+            { "text": "من خلال الغرامات", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "من خلال الإجراءات القانونية" }
+    },
+    {
+        "question": "ما هي الشروط اللازمة لرفع دعوى تنفيذ؟",
+        "answers": [
+            { "text": "وجود سند تنفيذي", "correct": true },
+            { "text": "عدم وجود مانع قانوني", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا توجد شروط", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "متى يمكن للدائن استرداد أمواله من المدين؟",
+        "answers": [
+            { "text": "بعد إصدار حكم قضائي", "correct": true },
+            { "text": "بعد التفاوض", "correct": false },
+            { "text": "بمجرد الاتفاق", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "بعد إصدار حكم قضائي" }
+    },
+    {
+        "question": "ما هو مفهوم \"الالتزام التبادلي\"؟",
+        "answers": [
+            { "text": "التزام لا يتطلب تبادل", "correct": false },
+            { "text": "التزام يعتمد على تبادل المصالح", "correct": true },
+            { "text": "التزام غير ملزم", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "التزام يعتمد على تبادل المصالح" }
+    },
+    {
+        "question": "كيف يتم تصنيف الالتزامات من حيث الزمن؟",
+        "answers": [
+            { "text": "فورية وآجلة", "correct": true },
+            { "text": "طويلة وقصيرة", "correct": false },
+            { "text": "ملزمة وغير ملزمة", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "فورية وآجلة" }
+    },
+    {
+        "question": "ما هي الإجراءات المتبعة لتنفيذ حكم قضائي؟",
+        "answers": [
+            { "text": "رفع دعوى جديدة", "correct": false },
+            { "text": "تقديم طلب تنفيذ", "correct": true },
+            { "text": "التفاوض مع المدين", "correct": false },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "تقديم طلب تنفيذ" }
+    },
+    {
+        "question": "ما هي الحقوق التي يجوز للدائن المطالبة بها أثناء التنفيذ؟",
+        "answers": [
+            { "text": "الحق في استرداد الدين", "correct": true },
+            { "text": "الحق في التعويض", "correct": true },
+            { "text": "الحق في الفائدة", "correct": true },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو دور الغرامات في تنفيذ الالتزامات؟",
+        "answers": [
+            { "text": "تخفيف العبء عن المدين", "correct": false },
+            { "text": "تعزيز الامتثال للالتزامات", "correct": true },
+            { "text": "زيادة التعقيد", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعزيز الامتثال للالتزامات" }
+    },
+    {
+        "question": "كيف يمكن للمدين تجنب الغرامات؟",
+        "answers": [
+            { "text": "من خلال التفاوض", "correct": false },
+            { "text": "بالامتثال للالتزامات", "correct": true },
+            { "text": "جميع ما سبق", "correct": false },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "بالامتثال للالتزامات" }
+    },
+    {
+        "question": "كيف يؤثر تنفيذ الالتزامات على سمعة المؤسسات التجارية؟",
+        "answers": [
+            { "text": "يعزز الثقة في السوق", "correct": true },
+            { "text": "يؤدي إلى فقدان الثقة", "correct": false },
+            { "text": "لا يؤثر على السمعة", "correct": false },
+            { "text": "يزيد من التعقيد", "correct": false }
+        ],
+        "correctAnswer": { "text": "يعزز الثقة في السوق" }
+    },
+    {
+        "question": "ما هو دور القانون في حماية حقوق الدائنين؟",
+        "answers": [
+            { "text": "إلغاء حقوق المدينين", "correct": false },
+            { "text": "ضمان تنفيذ الالتزامات", "correct": true },
+            { "text": "زيادة التعقيد", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "ضمان تنفيذ الالتزامات" }
+    },
+    {
+        "question": "ما هو التأثير الاجتماعي لعدم تنفيذ الالتزامات؟",
+        "answers": [
+            { "text": "تحسين العلاقات", "correct": false },
+            { "text": "فقدان الثقة في المؤسسات", "correct": true },
+            { "text": "زيادة الطلبات", "correct": false },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "فقدان الثقة في المؤسسات" }
+    },
+    {
+        "question": "كيف يمكن تحسين ثقة المستثمرين في النظام القانوني؟",
+        "answers": [
+            { "text": "من خلال تقليل الإجراءات", "correct": false },
+            { "text": "بزيادة الشفافية", "correct": true },
+            { "text": "بتعزيز حقوق المدينين", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "بزيادة الشفافية" }
+    },
+    {
+        "question": "ما هي الإجراءات التي يمكن أن يتخذها المدين إذا كان غير قادر على الوفاء بالتزاماته؟",
+        "answers": [
+            { "text": "التفاوض مع الدائن", "correct": true },
+            { "text": "طلب الإعفاء من الدين", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "عدم القيام بأي شيء", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يمكن للدائن إثبات حالة عدم الوفاء؟",
+        "answers": [
+            { "text": "من خلال الوثائق القانونية", "correct": true },
+            { "text": "من خلال الشهادات", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو الفرق بين الالتزام القانوني والالتزام الأخلاقي؟",
+        "answers": [
+            { "text": "الالتزام القانوني ملزم بالقانون", "correct": true },
+            { "text": "الالتزام الأخلاقي يعتمد على الضمير", "correct": true },
+            { "text": "لا يوجد فرق", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هي العوامل التي تؤثر في تنفيذ الالتزامات؟",
+        "answers": [
+            { "text": "الظروف الاقتصادية", "correct": true },
+            { "text": "القوانين المعمول بها", "correct": true },
+            { "text": "العلاقة بين الأطراف", "correct": true },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو دور المحامي في إجراءات التنفيذ؟",
+        "answers": [
+            { "text": "تقديم المشورة القانونية", "correct": true },
+            { "text": "تمثيل الأطراف في المحكمة", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "زيادة التعقيد", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يمكن للأطراف حل النزاعات خارج المحكمة؟",
+        "answers": [
+            { "text": "من خلال التفاوض", "correct": true },
+            { "text": "من خلال الوساطة", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يمكن تحسين فعالية نظام التنفيذ الجبري؟",
+        "answers": [
+            { "text": "بتقليل الوقت المستغرق", "correct": true },
+            { "text": "بزيادة الشفافية", "correct": true },
+            { "text": "بتعزيز حقوق الأطراف", "correct": true },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو التأثير السلبي لعدم تنفيذ الالتزامات على المجتمع؟",
+        "answers": [
+            { "text": "تحسين العلاقات التجارية", "correct": false },
+            { "text": "فقدان الثقة في النظام القانوني", "correct": true },
+            { "text": "زيادة الطلبات", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "فقدان الثقة في النظام القانوني" }
+    },
+    {
+        "question": "ما هو مفهوم \"التنفيذ الجزئي\"؟",
+        "answers": [
+            { "text": "تنفيذ جزء من الالتزام", "correct": true },
+            { "text": "عدم تنفيذ الالتزام بالكامل", "correct": false },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يمكن للدائن الاستفادة من التنفيذ الجزئي؟",
+        "answers": [
+            { "text": "بتحقيق بعض المكاسب", "correct": true },
+            { "text": "بزيادة الأمور تعقيدًا", "correct": false },
+            { "text": "لا شيء مما سبق", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "بتحقيق بعض المكاسب" }
+    },
+    {
+        "question": "ما هي العوامل التي تحدد نوع الالتزام؟",
+        "answers": [
+            { "text": "طبيعة السند", "correct": true },
+            { "text": "ظروف العقد", "correct": true },
+            { "text": "القوانين المعمول بها", "correct": true },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو أثر الدين على سمعة المدين؟",
+        "answers": [
+            { "text": "يحسن السمعة", "correct": false },
+            { "text": "يقلل من الثقة", "correct": true },
+            { "text": "لا يؤثر", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "يقلل من الثقة" }
+    },
+    {
+        "question": "ما هي التحديات التي تواجه نظام التنفيذ الجبري؟",
+        "answers": [
+            { "text": "التعقيد في الإجراءات", "correct": true },
+            { "text": "عدم كفاية الموارد", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "زيادة النزاعات", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هي التحديات التي تواجه نظام التنفيذ الجبري؟",
+        "answers": [
+            { "text": "التعقيد في الإجراءات", "correct": true },
+            { "text": "عدم كفاية الموارد", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "زيادة النزاعات", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يمكن توعية المدينين بحقوقهم وواجباتهم؟",
+        "answers": [
+            { "text": "من خلال التعليم القانوني", "correct": true },
+            { "text": "من خلال وسائل الإعلام", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هي أهمية تنظيم إجراءات التنفيذ؟",
+        "answers": [
+            { "text": "لضمان العدالة", "correct": true },
+            { "text": "لتقليل النزاعات", "correct": true },
+            { "text": "لزيادة الثقة", "correct": true },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يمكن للدائن التأكد من تحقيق حقوقه؟",
+        "answers": [
+            { "text": "من خلال التفاوض", "correct": true },
+            { "text": "من خلال رفع دعوى", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو مفهوم \"الإعفاء من الدين\"؟",
+        "answers": [
+            { "text": "إلغاء الدين بالكامل", "correct": true },
+            { "text": "تخفيض الدين", "correct": false },
+            { "text": "جميع ما سبق", "correct": false },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "إلغاء الدين بالكامل" }
+    },
+    {
+        "question": "كيف يمكن تعزيز حقوق المدينين؟",
+        "answers": [
+            { "text": "من خلال القوانين", "correct": true },
+            { "text": "من خلال التعليم", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هي الأنواع المختلفة من العقوبات المالية؟",
+        "answers": [
+            { "text": "الغرامات", "correct": true },
+            { "text": "الرسوم", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يمكن تحسين فعالية نظام التنفيذ القضائي؟",
+        "answers": [
+            { "text": "بتقليل الإجراءات", "correct": true },
+            { "text": "بزيادة الموارد", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هي العلاقة بين الالتزامات المدنية والالتزامات التجارية؟",
+        "answers": [
+            { "text": "لا علاقة", "correct": false },
+            { "text": "كل منهما يتطلب تنفيذًا", "correct": true },
+            { "text": "الالتزامات المدنية غير ملزمة", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "كل منهما يتطلب تنفيذًا" }
+    },
+    {
+        "question": "ما هو مفهوم \"التنفيذ الفوري\"؟",
+        "answers": [
+            { "text": "تنفيذ الالتزام على الفور", "correct": true },
+            { "text": "تنفيذ الالتزام بعد فترة", "correct": false },
+            { "text": "جميع ما سبق", "correct": false },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "تنفيذ الالتزام على الفور" }
+    },
+    {
+        "question": "كيف تؤثر الضغوط الاقتصادية على الالتزامات؟",
+        "answers": [
+            { "text": "تزيد من الالتزامات", "correct": true },
+            { "text": "تقلل من الالتزامات", "correct": false },
+            { "text": "لا تؤثر", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "تزيد من الالتزامات" }
+    },
+    {
+        "question": "ما هو التأثير الاجتماعي لعدم تنفيذ العقوبات؟",
+        "answers": [
+            { "text": "فقدان الثقة في النظام", "correct": true },
+            { "text": "تحسين العلاقات", "correct": false },
+            { "text": "لا تأثير", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "فقدان الثقة في النظام" }
+    },
+    {
+        "question": "كيف يمكن استخدام الوساطة لحل النزاعات؟",
+        "answers": [
+            { "text": "كوسيلة للتفاوض", "correct": true },
+            { "text": "كبديل للقضاء", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هي العوامل التي تؤثر في فعالية التنفيذ الجبري؟",
+        "answers": [
+            { "text": "الإجراءات القانونية", "correct": true },
+            { "text": "قدرة الدائن على التحصيل", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يتم تحديد قيمة الالتزام؟",
+        "answers": [
+            { "text": "من خلال السوق", "correct": true },
+            { "text": "من خلال التفاوض", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو التأثير المحتمل لعدم تنفيذ الالتزامات على العلاقات التجارية؟",
+        "answers": [
+            { "text": "تحسين العلاقات", "correct": false },
+            { "text": "تدهور الثقة", "correct": true },
+            { "text": "لا تأثير", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "تدهور الثقة" }
+    },
+    {
+        "question": "كيف يمكن تعزيز ثقافة الالتزام في المجتمع؟",
+        "answers": [
+            { "text": "من خلال التعليم", "correct": true },
+            { "text": "من خلال التوعية", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو دور القوانين في حماية حقوق الأطراف؟",
+        "answers": [
+            { "text": "ضمان العدالة", "correct": true },
+            { "text": "فرض العقوبات", "correct": false },
+            { "text": "جميع ما سبق", "correct": false },
+            { "text": "زيادة التعقيد", "correct": false }
+        ],
+        "correctAnswer": { "text": "ضمان العدالة" }
+    },
+    {
+        "question": "ما هي الشروط الأساسية لتسجيل الالتزامات القانونية؟",
+        "answers": [
+            { "text": "وجود اتفاق مكتوب", "correct": true },
+            { "text": "توقيع الأطراف", "correct": true },
+            { "text": "تسجيل في السجل الرسمي", "correct": true },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يؤثر تنفيذ الالتزامات على سمعة المؤسسات؟",
+        "answers": [
+            { "text": "يعزز الثقة", "correct": true },
+            { "text": "يؤدي إلى فقدان الثقة", "correct": false },
+            { "text": "لا يؤثر", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "يعزز الثقة" }
+    },
+    {
+        "question": "ما هو مفهوم \"التنفيذ القسري\"؟",
+        "answers": [
+            { "text": "تنفيذ الالتزام تحت الضغط", "correct": true },
+            { "text": "تنفيذ الالتزام بإرادة المدين", "correct": false },
+            { "text": "تنفيذ الالتزام بشكل اختياري", "correct": false },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "تنفيذ الالتزام تحت الضغط" }
+    },
+    {
+        "question": "ما هي الحقوق التي يتمتع بها الدائن في حالة عدم تنفيذ المدين؟",
+        "answers": [
+            { "text": "الحق في رفع دعوى", "correct": true },
+            { "text": "الحق في التفاوض", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يمكن للدائنين حماية أنفسهم من المخاطر المالية؟",
+        "answers": [
+            { "text": "من خلال التأمين", "correct": true },
+            { "text": "من خلال ضمانات", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو مفهوم \"الالتزام التقديري\"؟",
+        "answers": [
+            { "text": "التزام لا يمكن تحديده بدقة", "correct": true },
+            { "text": "التزام محدد بوضوح", "correct": false },
+            { "text": "لا شيء مما سبق", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "التزام لا يمكن تحديده بدقة" }
+    },
+    {
+        "question": "كيف تؤثر القوانين المحلية على الالتزامات الدولية؟",
+        "answers": [
+            { "text": "تحدد نطاق الالتزامات", "correct": true },
+            { "text": "لا تؤثر", "correct": false },
+            { "text": "تزيد من التعقيد", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "تحدد نطاق الالتزامات" }
+    },
+    {
+        "question": "ما هي الاستراتيجيات التي يمكن استخدامها لتعزيز الالتزام في المؤسسات؟",
+        "answers": [
+            { "text": "التدريب والتطوير", "correct": true },
+            { "text": "وضع سياسات واضحة", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يؤثر عدم تنفيذ الالتزامات على العلاقات الدولية؟",
+        "answers": [
+            { "text": "يعزز التعاون", "correct": false },
+            { "text": "يؤدي إلى النزاعات", "correct": true },
+            { "text": "لا يؤثر", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "يؤدي إلى النزاعات" }
+    },
+    {
+        "question": "ما هي العوامل التي تؤثر في فعالية نظام التنفيذ الجبري؟",
+        "answers": [
+            { "text": "القوانين المعمول بها", "correct": true },
+            { "text": "الموارد المتاحة", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يمكن تحسين نظام الإجراءات القانونية؟",
+        "answers": [
+            { "text": "بتقليل الإجراءات", "correct": true },
+            { "text": "بزيادة الشفافية", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو دور الوساطة في حل النزاعات القانونية؟",
+        "answers": [
+            { "text": "تسريع الإجراءات", "correct": true },
+            { "text": "تقليل التوتر", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يمكن تعزيز حقوق المدينين في النظام القانوني؟",
+        "answers": [
+            { "text": "من خلال التعليم", "correct": true },
+            { "text": "من خلال التشريعات", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يتم تصنيف الالتزامات من حيث الطبيعة؟",
+        "answers": [
+            { "text": "الالتزامات المالية وغير المالية", "correct": true },
+            { "text": "الالتزامات الشخصية والتجارية", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو التأثير المحتمل لعدم تنفيذ الالتزامات على الاقتصاد المحلي؟",
+        "answers": [
+            { "text": "تحسين الاستثمار", "correct": false },
+            { "text": "فقدان الثقة", "correct": true },
+            { "text": "لا يؤثر", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "فقدان الثقة" }
+    },
+    {
+        "question": "كيف يمكن تعزيز التوعية القانونية في المجتمع؟",
+        "answers": [
+            { "text": "من خلال الحملات الإعلامية", "correct": true },
+            { "text": "من خلال التعليم", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هي العلاقة بين الالتزامات والعقوبات؟",
+        "answers": [
+            { "text": "الالتزام يؤثر على العقوبة", "correct": true },
+            { "text": "العقوبة لا تتعلق بالالتزام", "correct": false },
+            { "text": "جميع ما سبق", "correct": false },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الالتزام يؤثر على العقوبة" }
+    },
+    {
+        "question": "ما هو مفهوم \"التحكيم\" في حل النزاعات؟",
+        "answers": [
+            { "text": "إجراء قانوني لحل النزاعات خارج المحكمة", "correct": true },
+            { "text": "إجراء قانوني داخل المحكمة", "correct": false },
+            { "text": "لا شيء مما سبق", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "إجراء قانوني لحل النزاعات خارج المحكمة" }
+    },
+    {
+        "question": "كيف يمكن للدائن حماية حقوقه في حالة عدم تنفيذ المدين؟",
+        "answers": [
+            { "text": "من خلال التهديد", "correct": false },
+            { "text": "من خلال الإجراءات القانونية", "correct": true },
+            { "text": "جميع ما سبق", "correct": false },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "من خلال الإجراءات القانونية" }
+    },
+    {
+        "question": "ما هو مفهوم \"الإفلاس\" في سياق الالتزامات؟",
+        "answers": [
+            { "text": "عدم قدرة المدين على الوفاء بالتزاماته", "correct": true },
+            { "text": "إجراء قانوني لحماية المدين", "correct": false },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يمكن تحسين نظام التقييم المالي للمؤسسات؟",
+        "answers": [
+            { "text": "من خلال التدقيق المستقل", "correct": true },
+            { "text": "من خلال الشفافية", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هي العوامل التي تؤثر في تنفيذ الالتزامات المالية؟",
+        "answers": [
+            { "text": "الظروف الاقتصادية", "correct": true },
+            { "text": "القوانين المعمول بها", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يؤثر عدم تنفيذ الالتزامات على سمعة المدين؟",
+        "answers": [
+            { "text": "يحسن السمعة", "correct": false },
+            { "text": "يقلل من الثقة", "correct": true },
+            { "text": "لا يؤثر", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "يقلل من الثقة" }
+    },
+    {
+        "question": "ما هو التأثير المحتمل لعدم تنفيذ الالتزامات على العلاقات التجارية؟",
+        "answers": [
+            { "text": "تحسين العلاقات", "correct": false },
+            { "text": "فقدان الثقة", "correct": true },
+            { "text": "لا يؤثر", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "فقدان الثقة" }
+    },
+    {
+        "question": "كيف يمكن للدائنين استخدام الطلاق القانوني لحماية حقوقهم؟",
+        "answers": [
+            { "text": "من خلال التحكيم", "correct": true },
+            { "text": "من خلال الوساطة", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هي أهمية التنظيم القانوني للالتزامات؟",
+        "answers": [
+            { "text": "لضمان العدالة", "correct": true },
+            { "text": "لتقليل النزاعات", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يمكن تحسين فعالية نظام التنفيذ الجبري؟",
+        "answers": [
+            { "text": "بتقليل الإجراءات", "correct": true },
+            { "text": "بزيادة الشفافية", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف تؤثر الضغوط الاقتصادية على الالتزامات المالية؟",
+        "answers": [
+            { "text": "تزيد الالتزامات", "correct": true },
+            { "text": "تقلل الالتزامات", "correct": false },
+            { "text": "لا تؤثر", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "تزيد الالتزامات" }
+    },
+    {
+        "question": "ما هي العوامل التي تؤثر في فعالية نظام التنفيذ الجبري؟",
+        "answers": [
+            { "text": "القوانين المعمول بها", "correct": true },
+            { "text": "الموارد المتاحة", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يمكن تعزيز ثقافة الالتزام في المجتمع؟",
+        "answers": [
+            { "text": "من خلال التعليم", "correct": true },
+            { "text": "من خلال التوعية", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هي الإجراءات القانونية التي يمكن اتخاذها ضد المدين؟",
+        "answers": [
+            { "text": "رفع دعوى", "correct": true },
+            { "text": "تقديم شكوى", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو دور المحامي في عملية التنفيذ؟",
+        "answers": [
+            { "text": "تقديم المشورة القانونية", "correct": true },
+            { "text": "تمثيل الأطراف في المحكمة", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يمكن للدائنين استخدام الوساطة لحل النزاعات؟",
+        "answers": [
+            { "text": "كوسيلة للتفاوض", "correct": true },
+            { "text": "كبديل للقضاء", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو التأثير الاجتماعي لعدم تنفيذ الالتزامات؟",
+        "answers": [
+            { "text": "فقدان الثقة في النظام", "correct": true },
+            { "text": "تحسين العلاقات", "correct": false },
+            { "text": "لا تأثير", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "فقدان الثقة في النظام" }
+    },
+    {
+        "question": "كيف يمكن للدائن حماية حقوقه من التعسف؟",
+        "answers": [
+            { "text": "من خلال الشكاوى", "correct": false },
+            { "text": "من خلال اللجوء إلى القضاء", "correct": true },
+            { "text": "جميع ما سبق", "correct": false },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "من خلال اللجوء إلى القضاء" }
+    },
+    {
+        "question": "ما هي أهمية تنظيم إجراءات التنفيذ؟",
+        "answers": [
+            { "text": "لضمان العدالة", "correct": true },
+            { "text": "لتقليل النزاعات", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يمكن للدائنين تحسين استراتيجياتهم في التحصيل؟",
+        "answers": [
+            { "text": "من خلال التدريب", "correct": true },
+            { "text": "من خلال التفاوض", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو التأثير المحتمل لتطبيق القوانين الحديثة على الالتزامات؟",
+        "answers": [
+            { "text": "تعزيز العدالة", "correct": true },
+            { "text": "زيادة التعقيد", "correct": false },
+            { "text": "لا تأثير", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعزيز العدالة" }
+    }
+        ];
+
+        questions.sort(() => Math.random() - 0.5);
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = questions[currentQuestionIndex];
+            const questionElement = document.createElement('div');
+            questionElement.classList.add('question');
+            questionElement.innerText = currentQuestion.question;
+            questionContainer.appendChild(questionElement);
+
+            currentQuestion.answers.sort(() => Math.random() - 0.5);
+
+            currentQuestion.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.innerText = answer.text;
+                button.classList.add('answer');
+                button.addEventListener('click', () => selectAnswer(answer));
+                questionContainer.appendChild(button);
+            });
+
+            questionCountDisplay.innerText = `السؤال ${currentQuestionIndex + 1} من ${questions.length}`;
+        }
+
+        function resetState() {
+            nextButton.style.display = 'none';
+            questionContainer.innerHTML = '';
+        }
+
+        function selectAnswer(answer) {
+            const currentQuestion = questions[currentQuestionIndex];
+
+            const buttons = document.querySelectorAll('.answer');
+            buttons.forEach(button => {
+                button.disabled = true;
+            });
+
+            if (answer.correct) {
+                score++;
+                scoreDisplay.innerText = `نتيجة: ${score}`;
+            } else {
+                wrongAnswers.push(currentQuestion);
+            }
+
+            buttons.forEach(button => {
+                if (button.innerText === currentQuestion.correctAnswer.text) {
+                    button.classList.add('correct');
+                } else if (button.innerText === answer.text && !answer.correct) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            nextButton.style.display = 'block';
+        }
+
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        });
+
+        function showResult() {
+            questionContainer.style.display = 'none';
+            nextButton.style.display = 'none';
+            resultContainer.style.display = 'block';
+
+            const half = questions.length / 2;
+            finalScoreDisplay.innerText = `نتيجتك هي: ${score} من ${questions.length}`;
+            resultMessage.innerText = "انتهى الاختبار!";
+            finalScoreDisplay.style.color = score < half ? 'red' : 'green';
+
+            if (wrongAnswers.length > 0) {
+                wrongAnswers.forEach((question, index) => {
+                    const wrongAnswerElement = document.createElement('div');
+                    wrongAnswerElement.classList.add('wrong-answer-question');
+                    wrongAnswerElement.innerHTML = `
+                        <div>السؤال ${index + 1}: <span style="color: red;">${question.question}</span></div>
+                        <div>الاختيارات:</div>
+                        <ul>
+                            ${question.answers.map(a => `<li>${a.text}</li>`).join('')}
+                        </ul>
+                        <div class="correct-answer">الإجابة الصحيحة: ${question.correctAnswer.text}</div>
+                    `;
+                    wrongAnswersContainer.appendChild(wrongAnswerElement);
+                });
+            }
+        }
+
+        showQuestion();
+    </script>
+</body>
+</html>

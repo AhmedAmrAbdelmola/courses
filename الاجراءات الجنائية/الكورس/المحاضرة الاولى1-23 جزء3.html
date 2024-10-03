@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الأسئلة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* منع التمرير العمودي في الجسم */
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex-grow: 1; /* يسمح للحاوية بالنمو لملء المساحة المتاحة */
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* يسمح بالتمرير داخل الحاوية */
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .score {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .question-container {
+            margin-bottom: 20px;
+        }
+
+        .question {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        .answer {
+            display: block;
+            margin: 10px auto;
+            padding: 15px;
+            font-size: 1.2em;
+            background: #e7e7e7;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 80%;
+        }
+
+        .correct {
+            background-color: green;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: red;
+            color: white;
+        }
+
+        .next-button {
+            font-size: 1.5em;
+            background-color: yellow;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            border: 2px solid #ccc;
+        }
+
+        .result-container {
+            display: none;
+        }
+
+        .result-message {
+            font-size: 2em;
+        }
+
+        .final-score {
+            font-size: 1.5em;
+        }
+
+        .wrong-answer-container {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .wrong-answer-question {
+            background-color: #ffe6e6;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 80%;
+            max-width: 400px;
+            border: 1px solid red;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .wrong-answer-question .correct-answer {
+            color: green;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>اختبار الأسئلة</h1>
+        <div id="score" class="score">نتيجة: 0</div>
+        <div id="question-count" class="question-count"></div>
+        <div id="question-container" class="question-container"></div>
+        <button id="next-button" class="next-button" style="display:none;">السؤال التالي</button>
+        <div id="result-container" class="result-container">
+            <div id="result-message" class="result-message"></div>
+            <div id="final-score" class="final-score"></div>
+            <div id="wrong-answers" class="wrong-answer-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const questionContainer = document.getElementById('question-container');
+        const scoreDisplay = document.getElementById('score');
+        const nextButton = document.getElementById('next-button');
+        const questionCountDisplay = document.getElementById('question-count');
+        const resultContainer = document.getElementById('result-container');
+        const resultMessage = document.getElementById('result-message');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const wrongAnswersContainer = document.getElementById('wrong-answers');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let wrongAnswers = [];
+        let questions = [
+        {
+        "question": "ما هي الخطوة الأولى في التحقيق الجنائي؟",
+        "answers": [
+            { "text": "جمع الأدلة", "correct": false },
+            { "text": "الاستجواب", "correct": false },
+            { "text": "تحديد الجريمة", "correct": true }
+        ],
+        "correctAnswer": { "text": "تحديد الجريمة" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم الإجراءات في حالة الطوارئ؟",
+        "answers": [
+            { "text": "قانون الطوارئ", "correct": true },
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الطوارئ" }
+    },
+    {
+        "question": "ما هي حقوق المتهم في النظام الجنائي؟",
+        "answers": [
+            { "text": "الحق في الدفاع", "correct": false },
+            { "text": "الحق في محاكمة عادلة", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم إجراءات المحاكمة؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون المرافعات", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هي العقوبات المقررة في الحالات الجنائية؟",
+        "answers": [
+            { "text": "الغرامة فقط", "correct": false },
+            { "text": "السجن والغرامة", "correct": true },
+            { "text": "جميع الخيارات", "correct": false }
+        ],
+        "correctAnswer": { "text": "السجن والغرامة" }
+    },
+    {
+        "question": "ما هو الهدف من مرحلة الاستدلال؟",
+        "answers": [
+            { "text": "تقديم الأدلة", "correct": false },
+            { "text": "جمع المعلومات", "correct": true },
+            { "text": "الحكم النهائي", "correct": false }
+        ],
+        "correctAnswer": { "text": "جمع المعلومات" }
+    },
+    {
+        "question": "ما هي الحقوق التي يتمتع بها الشهود؟",
+        "answers": [
+            { "text": "الحق في عدم الإدلاء بشهادتهم", "correct": false },
+            { "text": "الحق في الحماية", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم إجراءات الاستئناف؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون المرافعات", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هي الإجراءات التي يجب اتباعها عند القبض على شخص؟",
+        "answers": [
+            { "text": "تقديم الأدلة", "correct": false },
+            { "text": "التحذير أولاً", "correct": true },
+            { "text": "تنفيذ القبض دون إذن", "correct": false }
+        ],
+        "correctAnswer": { "text": "التحذير أولاً" }
+    },
+    {
+        "question": "ما هي حقوق الدفاع في النظام الجنائي؟",
+        "answers": [
+            { "text": "الحق في الاستعانة بمحامي", "correct": true },
+            { "text": "الحق في عدم تقديم أدلة ضد النفس", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هو الهدف من وجود محكمة النقض؟",
+        "answers": [
+            { "text": "مراجعة الأحكام", "correct": true },
+            { "text": "إصدار أحكام جديدة", "correct": false },
+            { "text": "تحسين الإجراءات", "correct": false }
+        ],
+        "correctAnswer": { "text": "مراجعة الأحكام" }
+    },
+    {
+        "question": "ما هي المرحلة التي تسبق المحاكمة؟",
+        "answers": [
+            { "text": "التحقيق", "correct": true },
+            { "text": "الاستئناف", "correct": false },
+            { "text": "الاستدلال", "correct": false }
+        ],
+        "correctAnswer": { "text": "التحقيق" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم حقوق المتهمين؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون المرافعات", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هو دور النيابة العامة في النظام الجنائي؟",
+        "answers": [
+            { "text": "تقديم الأدلة", "correct": false },
+            { "text": "حماية المتهم", "correct": false },
+            { "text": "تحقيق العدالة", "correct": true }
+        ],
+        "correctAnswer": { "text": "تحقيق العدالة" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم إجراءات الطعن بالنقض؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون المرافعات", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هو الهدف من إجراءات الطعن في الأحكام؟",
+        "answers": [
+            { "text": "تحسين العدالة", "correct": false },
+            { "text": "مراجعة الأخطاء", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هي الحقوق التي يتمتع بها الضحايا في النظام الجنائي؟",
+        "answers": [
+            { "text": "الحق في التعويض", "correct": false },
+            { "text": "الحق في الإبلاغ", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم حقوق الشهود؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون الطوارئ", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هي العقوبات المقررة للشهادة الزور؟",
+        "answers": [
+            { "text": "السجن فقط", "correct": false },
+            { "text": "الغرامة فقط", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هو دور قاضي التحقيق؟",
+        "answers": [
+            { "text": "جمع الأدلة", "correct": true },
+            { "text": "اتخاذ القرارات النهائية", "correct": false },
+            { "text": "تقديم الأدلة للمحكمة", "correct": false }
+        ],
+        "correctAnswer": { "text": "جمع الأدلة" }
+    },
+    {
+        "question": "ما هي الخطوة الأولى في التحقيق الجنائي؟",
+        "answers": [
+            { "text": "تحديد الجريمة", "correct": true },
+            { "text": "جمع الأدلة", "correct": false },
+            { "text": "الاستجواب", "correct": false }
+        ],
+        "correctAnswer": { "text": "تحديد الجريمة" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم الحقوق في حالة الطوارئ؟",
+        "answers": [
+            { "text": "قانون الطوارئ", "correct": true },
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الطوارئ" }
+    },
+    {
+        "question": "ما هي الحقوق التي يتمتع بها المتهم في النظام الجنائي؟",
+        "answers": [
+            { "text": "الحق في الدفاع", "correct": false },
+            { "text": "الحق في محاكمة عادلة", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم إجراءات المحاكمة؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون المرافعات", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هي العقوبات المقررة في الحالات الجنائية؟",
+        "answers": [
+            { "text": "الغرامة فقط", "correct": false },
+            { "text": "السجن والغرامة", "correct": true },
+            { "text": "جميع الخيارات", "correct": false }
+        ],
+        "correctAnswer": { "text": "السجن والغرامة" }
+    },
+    {
+        "question": "ما هو الهدف من مرحلة الاستدلال؟",
+        "answers": [
+            { "text": "تقديم الأدلة", "correct": false },
+            { "text": "جمع المعلومات", "correct": true },
+            { "text": "الحكم النهائي", "correct": false }
+        ],
+        "correctAnswer": { "text": "جمع المعلومات" }
+    },
+    {
+        "question": "ما هي الحقوق التي يتمتع بها الشهود؟",
+        "answers": [
+            { "text": "الحق في عدم الإدلاء بشهادتهم", "correct": false },
+            { "text": "الحق في الحماية", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم إجراءات الاستئناف؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون المرافعات", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هي الإجراءات التي يجب اتباعها عند القبض على شخص؟",
+        "answers": [
+            { "text": "تقديم الأدلة", "correct": false },
+            { "text": "التحذير أولاً", "correct": true },
+            { "text": "تنفيذ القبض دون إذن", "correct": false }
+        ],
+        "correctAnswer": { "text": "التحذير أولاً" }
+    },
+    {
+        "question": "ما هي حقوق الدفاع في النظام الجنائي؟",
+        "answers": [
+            { "text": "الحق في الاستعانة بمحامي", "correct": true },
+            { "text": "الحق في عدم تقديم أدلة ضد النفس", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هو الهدف من وجود محكمة النقض؟",
+        "answers": [
+            { "text": "مراجعة الأحكام", "correct": true },
+            { "text": "إصدار أحكام جديدة", "correct": false },
+            { "text": "تحسين الإجراءات", "correct": false }
+        ],
+        "correctAnswer": { "text": "مراجعة الأحكام" }
+    },
+    {
+        "question": "ما هي المرحلة التي تسبق المحاكمة؟",
+        "answers": [
+            { "text": "التحقيق", "correct": true },
+            { "text": "الاستئناف", "correct": false },
+            { "text": "الاستدلال", "correct": false }
+        ],
+        "correctAnswer": { "text": "التحقيق" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم حقوق المتهمين؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون المرافعات", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هو دور النيابة العامة في النظام الجنائي؟",
+        "answers": [
+            { "text": "تقديم الأدلة", "correct": false },
+            { "text": "حماية المتهم", "correct": false },
+            { "text": "تحقيق العدالة", "correct": true }
+        ],
+        "correctAnswer": { "text": "تحقيق العدالة" }
+    },
+    {
+        "question": "ما هي العقوبات المقررة في الحالات الجنائية؟",
+        "answers": [
+            { "text": "الغرامة فقط", "correct": false },
+            { "text": "السجن والغرامة", "correct": true },
+            { "text": "جميع الخيارات", "correct": false }
+        ],
+        "correctAnswer": { "text": "السجن والغرامة" }
+    },
+    {
+        "question": "ما هو الهدف من مرحلة الاستدلال؟",
+        "answers": [
+            { "text": "تقديم الأدلة", "correct": false },
+            { "text": "جمع المعلومات", "correct": true },
+            { "text": "الحكم النهائي", "correct": false }
+        ],
+        "correctAnswer": { "text": "جمع المعلومات" }
+    },
+    {
+        "question": "ما هي الحقوق التي يتمتع بها الشهود؟",
+        "answers": [
+            { "text": "الحق في عدم الإدلاء بشهادتهم", "correct": false },
+            { "text": "الحق في الحماية", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم إجراءات الاستئناف؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون المرافعات", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هي الإجراءات التي يجب اتباعها عند القبض على شخص؟",
+        "answers": [
+            { "text": "تقديم الأدلة", "correct": false },
+            { "text": "التحذير أولاً", "correct": true },
+            { "text": "تنفيذ القبض دون إذن", "correct": false }
+        ],
+        "correctAnswer": { "text": "التحذير أولاً" }
+    },
+    {
+        "question": "ما هي حقوق الدفاع في النظام الجنائي؟",
+        "answers": [
+            { "text": "الحق في الاستعانة بمحامي", "correct": true },
+            { "text": "الحق في عدم تقديم أدلة ضد النفس", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هو الهدف من وجود محكمة النقض؟",
+        "answers": [
+            { "text": "مراجعة الأحكام", "correct": true },
+            { "text": "إصدار أحكام جديدة", "correct": false },
+            { "text": "تحسين الإجراءات", "correct": false }
+        ],
+        "correctAnswer": { "text": "مراجعة الأحكام" }
+    },
+    {
+        "question": "ما هي المرحلة التي تسبق المحاكمة؟",
+        "answers": [
+            { "text": "التحقيق", "correct": true },
+            { "text": "الاستئناف", "correct": false },
+            { "text": "الاستدلال", "correct": false }
+        ],
+        "correctAnswer": { "text": "التحقيق" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم حقوق المتهمين؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون المرافعات", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هو دور النيابة العامة في النظام الجنائي؟",
+        "answers": [
+            { "text": "تقديم الأدلة", "correct": false },
+            { "text": "حماية المتهم", "correct": false },
+            { "text": "تحقيق العدالة", "correct": true }
+        ],
+        "correctAnswer": { "text": "تحقيق العدالة" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم إجراءات الطعن بالنقض؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون المرافعات", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هو الهدف من إجراءات الطعن في الأحكام؟",
+        "answers": [
+            { "text": "تحسين العدالة", "correct": false },
+            { "text": "مراجعة الأخطاء", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هي الحقوق التي يتمتع بها الضحايا في النظام الجنائي؟",
+        "answers": [
+            { "text": "الحق في التعويض", "correct": false },
+            { "text": "الحق في الإبلاغ", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم حقوق الشهود؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون الطوارئ", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هي العقوبات المقررة للشهادة الزور؟",
+        "answers": [
+            { "text": "السجن فقط", "correct": false },
+            { "text": "الغرامة فقط", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هو دور قاضي التحقيق؟",
+        "answers": [
+            { "text": "جمع الأدلة", "correct": true },
+            { "text": "اتخاذ القرارات النهائية", "correct": false },
+            { "text": "تقديم الأدلة للمحكمة", "correct": false }
+        ],
+        "correctAnswer": { "text": "جمع الأدلة" }
+    },
+    {
+        "question": "ما هي الخطوة الأولى في التحقيق الجنائي؟",
+        "answers": [
+            { "text": "تحديد الجريمة", "correct": true },
+            { "text": "جمع الأدلة", "correct": false },
+            { "text": "الاستجواب", "correct": false }
+        ],
+        "correctAnswer": { "text": "تحديد الجريمة" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم الحقوق في حالة الطوارئ؟",
+        "answers": [
+            { "text": "قانون الطوارئ", "correct": true },
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الطوارئ" }
+    },
+    {
+        "question": "ما هي الحقوق التي يتمتع بها المتهم في النظام الجنائي؟",
+        "answers": [
+            { "text": "الحق في الدفاع", "correct": false },
+            { "text": "الحق في محاكمة عادلة", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم إجراءات المحاكمة؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون المرافعات", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هي الإجراءات التي يجب اتباعها عند القبض على شخص؟",
+        "answers": [
+            { "text": "تقديم الأدلة", "correct": false },
+            { "text": "التحذير أولاً", "correct": true },
+            { "text": "تنفيذ القبض دون إذن", "correct": false }
+        ],
+        "correctAnswer": { "text": "التحذير أولاً" }
+    },
+    {
+        "question": "ما هي حقوق الدفاع في النظام الجنائي؟",
+        "answers": [
+            { "text": "الحق في الاستعانة بمحامي", "correct": true },
+            { "text": "الحق في عدم تقديم أدلة ضد النفس", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هو الهدف من وجود محكمة النقض؟",
+        "answers": [
+            { "text": "مراجعة الأحكام", "correct": true },
+            { "text": "إصدار أحكام جديدة", "correct": false },
+            { "text": "تحسين الإجراءات", "correct": false }
+        ],
+        "correctAnswer": { "text": "مراجعة الأحكام" }
+    },
+    {
+        "question": "ما هي المرحلة التي تسبق المحاكمة؟",
+        "answers": [
+            { "text": "التحقيق", "correct": true },
+            { "text": "الاستئناف", "correct": false },
+            { "text": "الاستدلال", "correct": false }
+        ],
+        "correctAnswer": { "text": "التحقيق" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم حقوق المتهمين؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون المرافعات", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هو دور النيابة العامة في النظام الجنائي؟",
+        "answers": [
+            { "text": "تقديم الأدلة", "correct": false },
+            { "text": "حماية المتهم", "correct": false },
+            { "text": "تحقيق العدالة", "correct": true }
+        ],
+        "correctAnswer": { "text": "تحقيق العدالة" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم إجراءات الطعن بالنقض؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون المرافعات", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هو الهدف من إجراءات الطعن في الأحكام؟",
+        "answers": [
+            { "text": "تحسين العدالة", "correct": false },
+            { "text": "مراجعة الأخطاء", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هي الحقوق التي يتمتع بها الضحايا في النظام الجنائي؟",
+        "answers": [
+            { "text": "الحق في التعويض", "correct": false },
+            { "text": "الحق في الإبلاغ", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم حقوق الشهود؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون الطوارئ", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هي العقوبات المقررة للشهادة الزور؟",
+        "answers": [
+            { "text": "السجن فقط", "correct": false },
+            { "text": "الغرامة فقط", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هو دور قاضي التحقيق؟",
+        "answers": [
+            { "text": "جمع الأدلة", "correct": true },
+            { "text": "اتخاذ القرارات النهائية", "correct": false },
+            { "text": "تقديم الأدلة للمحكمة", "correct": false }
+        ],
+        "correctAnswer": { "text": "جمع الأدلة" }
+    },
+    {
+        "question": "ما هي الخطوة الأولى في التحقيق الجنائي؟",
+        "answers": [
+            { "text": "تحديد الجريمة", "correct": true },
+            { "text": "جمع الأدلة", "correct": false },
+            { "text": "الاستجواب", "correct": false }
+        ],
+        "correctAnswer": { "text": "تحديد الجريمة" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم الحقوق في حالة الطوارئ؟",
+        "answers": [
+            { "text": "قانون الطوارئ", "correct": true },
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الطوارئ" }
+    },
+    {
+        "question": "ما هي الحقوق التي يتمتع بها المتهم في النظام الجنائي؟",
+        "answers": [
+            { "text": "الحق في الدفاع", "correct": false },
+            { "text": "الحق في محاكمة عادلة", "correct": false },
+            { "text": "جميع الخيارات", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع الخيارات" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم إجراءات المحاكمة؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون المرافعات", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    }
+        ];
+
+        questions.sort(() => Math.random() - 0.5);
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = questions[currentQuestionIndex];
+            const questionElement = document.createElement('div');
+            questionElement.classList.add('question');
+            questionElement.innerText = currentQuestion.question;
+            questionContainer.appendChild(questionElement);
+
+            currentQuestion.answers.sort(() => Math.random() - 0.5);
+
+            currentQuestion.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.innerText = answer.text;
+                button.classList.add('answer');
+                button.addEventListener('click', () => selectAnswer(answer));
+                questionContainer.appendChild(button);
+            });
+
+            questionCountDisplay.innerText = `السؤال ${currentQuestionIndex + 1} من ${questions.length}`;
+        }
+
+        function resetState() {
+            nextButton.style.display = 'none';
+            questionContainer.innerHTML = '';
+        }
+
+        function selectAnswer(answer) {
+            const currentQuestion = questions[currentQuestionIndex];
+
+            const buttons = document.querySelectorAll('.answer');
+            buttons.forEach(button => {
+                button.disabled = true; // تعطيل الأزرار بعد الاختيار
+            });
+
+            if (answer.correct) {
+                score++;
+                scoreDisplay.innerText = `نتيجة: ${score}`;
+            } else {
+                wrongAnswers.push(currentQuestion);
+            }
+
+            buttons.forEach(button => {
+                if (button.innerText === currentQuestion.correctAnswer.text) {
+                    button.classList.add('correct');
+                } else if (button.innerText === answer.text && !answer.correct) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            nextButton.style.display = 'block';
+        }
+
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        });
+
+        function showResult() {
+            questionContainer.style.display = 'none';
+            nextButton.style.display = 'none';
+            resultContainer.style.display = 'block';
+
+            finalScoreDisplay.innerText = `نتيجتك النهائية: ${score} من ${questions.length}`;
+            resultMessage.innerText = 'انتهى الاختبار!';
+
+            if (wrongAnswers.length > 0) {
+                wrongAnswers.forEach(question => {
+                    const wrongAnswerElement = document.createElement('div');
+                    wrongAnswerElement.classList.add('wrong-answer-question');
+                    wrongAnswerElement.innerHTML = `
+                        <div>${question.question}</div>
+                        <div class="correct-answer">الإجابة الصحيحة: ${question.correctAnswer.text}</div>
+                        <ul>
+                            ${question.answers.map(ans => `<li>${ans.text}</li>`).join('')}
+                        </ul>
+                    `;
+                    wrongAnswersContainer.appendChild(wrongAnswerElement);
+                });
+            } else {
+                wrongAnswersContainer.innerHTML = '<div>لا توجد إجابات خاطئة!</div>';
+            }
+        }
+
+        showQuestion();
+    </script>
+</body>
+</html>

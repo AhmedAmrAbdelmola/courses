@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الأسئلة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* منع التمرير العمودي في الجسم */
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex-grow: 1; /* يسمح للحاوية بالنمو لملء المساحة المتاحة */
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* يسمح بالتمرير داخل الحاوية */
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .score {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .question-container {
+            margin-bottom: 20px;
+        }
+
+        .question {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        .answer {
+            display: block;
+            margin: 10px auto;
+            padding: 15px;
+            font-size: 1.2em;
+            background: #e7e7e7;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 80%;
+        }
+
+        .correct {
+            background-color: green;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: red;
+            color: white;
+        }
+
+        .next-button {
+            font-size: 1.5em;
+            background-color: yellow;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            border: 2px solid #ccc;
+        }
+
+        .result-container {
+            display: none;
+        }
+
+        .result-message {
+            font-size: 2em;
+        }
+
+        .final-score {
+            font-size: 1.5em;
+        }
+
+        .wrong-answer-container {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .wrong-answer-question {
+            background-color: #ffe6e6;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 80%;
+            max-width: 400px;
+            border: 1px solid red;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .wrong-answer-question .correct-answer {
+            color: green;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>اختبار الأسئلة</h1>
+        <div id="score" class="score">نتيجة: 0</div>
+        <div id="question-count" class="question-count"></div>
+        <div id="question-container" class="question-container"></div>
+        <button id="next-button" class="next-button" style="display:none;">السؤال التالي</button>
+        <div id="result-container" class="result-container">
+            <div id="result-message" class="result-message"></div>
+            <div id="final-score" class="final-score"></div>
+            <div id="wrong-answers" class="wrong-answer-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const questionContainer = document.getElementById('question-container');
+        const scoreDisplay = document.getElementById('score');
+        const nextButton = document.getElementById('next-button');
+        const questionCountDisplay = document.getElementById('question-count');
+        const resultContainer = document.getElementById('result-container');
+        const resultMessage = document.getElementById('result-message');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const wrongAnswersContainer = document.getElementById('wrong-answers');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let wrongAnswers = [];
+        let questions = [
+        {
+        "question": "ما هو الأصل في تنفيذ الالتزام؟",
+        "answers": [
+            { "text": "التنفيذ الجبري", "correct": false },
+            { "text": "التنفيذ الاختياري", "correct": true },
+            { "text": "التنفيذ الجزئي", "correct": false },
+            { "text": "التنفيذ المؤجل", "correct": false }
+        ],
+        "correctAnswer": { "text": "التنفيذ الاختياري" }
+    },
+    {
+        "question": "ما الذي يعنيه 'التنفيذ الاختياري'؟",
+        "answers": [
+            { "text": "تنفيذ الالتزام بإرادة المدين", "correct": true },
+            { "text": "تنفيذ الالتزام جبراً", "correct": false },
+            { "text": "تنفيذ الالتزام تحت الضغط", "correct": false },
+            { "text": "عدم تنفيذ الالتزام", "correct": false }
+        ],
+        "correctAnswer": { "text": "تنفيذ الالتزام بإرادة المدين" }
+    },
+    {
+        "question": "ما هو شرط إبراء ذمة المدين؟",
+        "answers": [
+            { "text": "قبول الدائن للعرض", "correct": true },
+            { "text": "رفض الدائن للعرض", "correct": false },
+            { "text": "تنفيذ الالتزام جزئياً", "correct": false },
+            { "text": "عدم وجود عقد مكتوب", "correct": false }
+        ],
+        "correctAnswer": { "text": "قبول الدائن للعرض" }
+    },
+    {
+        "question": "ما هو قانون التنفيذ الجبري؟",
+        "answers": [
+            { "text": "مجموعة قواعد قانونية إجرائية", "correct": true },
+            { "text": "قانون مدني", "correct": false },
+            { "text": "قانون جنائي", "correct": false },
+            { "text": "قانون دولي", "correct": false }
+        ],
+        "correctAnswer": { "text": "مجموعة قواعد قانونية إجرائية" }
+    },
+    {
+        "question": "من يحق له ممارسة التنفيذ الجبري؟",
+        "answers": [
+            { "text": "المدين فقط", "correct": false },
+            { "text": "الدائن فقط", "correct": true },
+            { "text": "أي شخص", "correct": false },
+            { "text": "الدولة فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "الدائن فقط" }
+    },
+    {
+        "question": "ما هي الإجراءات التي يمكن للمدين اتخاذها في حالة رفض الدائن قبول الوفاء؟",
+        "answers": [
+            { "text": "الانسحاب", "correct": false },
+            { "text": "العرض والإيداع", "correct": true },
+            { "text": "رفع دعوى", "correct": false },
+            { "text": "عدم القيام بأي شيء", "correct": false }
+        ],
+        "correctAnswer": { "text": "العرض والإيداع" }
+    },
+    {
+        "question": "ما هو الفرق بين التنفيذ المباشر وغير المباشر؟",
+        "answers": [
+            { "text": "التنفيذ المباشر يتعلق بالأموال فقط", "correct": false },
+            { "text": "التنفيذ غير المباشر يتطلب إجراءات معقدة", "correct": false },
+            { "text": "التنفيذ المباشر يتم دون تغيير في المراكز القانونية", "correct": true },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "التنفيذ المباشر يتم دون تغيير في المراكز القانونية" }
+    },
+    {
+        "question": "ما هي الغرامة التهديدية؟",
+        "answers": [
+            { "text": "عقوبة مالية", "correct": false },
+            { "text": "وسيلة ضغط على المدين", "correct": true },
+            { "text": "حكم قضائي", "correct": false },
+            { "text": "عرض مالي", "correct": false }
+        ],
+        "correctAnswer": { "text": "وسيلة ضغط على المدين" }
+    },
+    {
+        "question": "في أي حالات يمكن حبس المدين؟",
+        "answers": [
+            { "text": "في جميع الديون", "correct": false },
+            { "text": "في ديون الأحوال الشخصية", "correct": true },
+            { "text": "في الديون التجارية فقط", "correct": false },
+            { "text": "في جميع الأحوال", "correct": false }
+        ],
+        "correctAnswer": { "text": "في ديون الأحوال الشخصية" }
+    },
+    {
+        "question": "ما هو شرط تنفيذ الالتزام المباشر؟",
+        "answers": [
+            { "text": "وجود مانع أدبي", "correct": false },
+            { "text": "استحالة التنفيذ المادي", "correct": true },
+            { "text": "وجود سند تنفيذي", "correct": false },
+            { "text": "عدم وجود مانع قانوني", "correct": false }
+        ],
+        "correctAnswer": { "text": "استحالة التنفيذ المادي" }
+    },
+    {
+        "question": "كيف يتم تحديد الحق في التنفيذ الجبري؟",
+        "answers": [
+            { "text": "بناءً على نوع الالتزام", "correct": false },
+            { "text": "بناءً على نوع الدائن", "correct": false },
+            { "text": "بناءً على السند التنفيذي", "correct": true },
+            { "text": "بناءً على المحكمة", "correct": false }
+        ],
+        "correctAnswer": { "text": "بناءً على السند التنفيذي" }
+    },
+    {
+        "question": "ما هو دور الدولة في تنفيذ الالتزامات؟",
+        "answers": [
+            { "text": "إلغاء الالتزامات", "correct": false },
+            { "text": "ضمان تنفيذ الالتزامات", "correct": true },
+            { "text": "فرض عقوبات", "correct": false },
+            { "text": "تقديم المشورة القانونية", "correct": false }
+        ],
+        "correctAnswer": { "text": "ضمان تنفيذ الالتزامات" }
+    },
+    {
+        "question": "ما هي علاقة الحق في التنفيذ بالحق الموضوعي؟",
+        "answers": [
+            { "text": "الحق في التنفيذ مستقل تمامًا", "correct": false },
+            { "text": "الحق في التنفيذ جزء من الحق الموضوعي", "correct": false },
+            { "text": "الحق في التنفيذ شرط للحق الموضوعي", "correct": false },
+            { "text": "لا توجد علاقة", "correct": true }
+        ],
+        "correctAnswer": { "text": "لا توجد علاقة" }
+    },
+    {
+        "question": "كيف يؤثر قانون التنفيذ الجبري على الاقتصاد؟",
+        "answers": [
+            { "text": "يزيد من التجارة", "correct": true },
+            { "text": "يقلل من الثقة", "correct": false },
+            { "text": "لا يؤثر", "correct": false },
+            { "text": "يحسن العلاقات الاجتماعية", "correct": false }
+        ],
+        "correctAnswer": { "text": "يزيد من التجارة" }
+    },
+    {
+        "question": "ما هو المعيار الأساسي للتفريق بين التنفيذ المباشر وغير المباشر؟",
+        "answers": [
+            { "text": "نوع الالتزام", "correct": true },
+            { "text": "الجهة المنفذة", "correct": false },
+            { "text": "نوع السند التنفيذي", "correct": false },
+            { "text": "مصلحة المدين", "correct": false }
+        ],
+        "correctAnswer": { "text": "نوع الالتزام" }
+    },
+    {
+        "question": "ما هو التنفيذ الاختياري؟",
+        "answers": [
+            { "text": "تنفيذ الالتزام بإرادة المدين", "correct": true },
+            { "text": "تنفيذ الالتزام جبراً", "correct": false },
+            { "text": "تنفيذ الالتزام جزئياً", "correct": false },
+            { "text": "عدم تنفيذ الالتزام", "correct": false }
+        ],
+        "correctAnswer": { "text": "تنفيذ الالتزام بإرادة المدين" }
+    },
+    {
+        "question": "في أي حالة يعتبر التنفيذ اختيارياً؟",
+        "answers": [
+            { "text": "إذا كان المدين راضياً", "correct": true },
+            { "text": "إذا كان الدائن يرفض", "correct": false },
+            { "text": "إذا كان هناك حكم قضائي", "correct": false },
+            { "text": "إذا كانت المصلحة العامة تتطلب ذلك", "correct": false }
+        ],
+        "correctAnswer": { "text": "إذا كان المدين راضياً" }
+    },
+    {
+        "question": "ما الذي يحدث إذا رفض الدائن قبول الوفاء؟",
+        "answers": [
+            { "text": "ينقضي الالتزام", "correct": false },
+            { "text": "يمكن للمدين اتخاذ إجراءات العرض والإيداع", "correct": true },
+            { "text": "لا يحدث شيء", "correct": false },
+            { "text": "يُلزم المدين بدفع غرامة", "correct": false }
+        ],
+        "correctAnswer": { "text": "يمكن للمدين اتخاذ إجراءات العرض والإيداع" }
+    },
+    {
+        "question": "ما هو قانون التنفيذ الجبري؟",
+        "answers": [
+            { "text": "قواعد قانونية تحكم العقوبات", "correct": false },
+            { "text": "مجموعة قواعد قانونية إجرائية", "correct": true },
+            { "text": "قانون مدني", "correct": false },
+            { "text": "قانون دولي", "correct": false }
+        ],
+        "correctAnswer": { "text": "مجموعة قواعد قانونية إجرائية" }
+    },
+    {
+        "question": "من يحق له ممارسة التنفيذ الجبري؟",
+        "answers": [
+            { "text": "المدين فقط", "correct": false },
+            { "text": "الدائن فقط", "correct": true },
+            { "text": "أي شخص", "correct": false },
+            { "text": "الدولة فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "الدائن فقط" }
+    },
+    {
+        "question": "ما هو الهدف من قانون التنفيذ الجبري؟",
+        "answers": [
+            { "text": "حماية المدين فقط", "correct": false },
+            { "text": "ضمان حقوق الدائنين", "correct": true },
+            { "text": "فرض العقوبات", "correct": false },
+            { "text": "تقييد حرية الأفراد", "correct": false }
+        ],
+        "correctAnswer": { "text": "ضمان حقوق الدائنين" }
+    },
+    {
+        "question": "ما هي الإجراءات التي يمكن للمدين اتخاذها في حالة رفض الدائن قبول الوفاء؟",
+        "answers": [
+            { "text": "الانسحاب", "correct": false },
+            { "text": "العرض والإيداع", "correct": true },
+            { "text": "رفع دعوى", "correct": false },
+            { "text": "عدم القيام بأي شيء", "correct": false }
+        ],
+        "correctAnswer": { "text": "العرض والإيداع" }
+    },
+    {
+        "question": "ما هي شروط تنفيذ الالتزام المباشر؟",
+        "answers": [
+            { "text": "وجود مانع أدبي", "correct": false },
+            { "text": "استحالة التنفيذ المادي", "correct": true },
+            { "text": "وجود سند تنفيذي", "correct": false },
+            { "text": "عدم وجود مانع قانوني", "correct": false }
+        ],
+        "correctAnswer": { "text": "استحالة التنفيذ المادي" }
+    },
+    {
+        "question": "ما الفرق بين التنفيذ المباشر وغير المباشر؟",
+        "answers": [
+            { "text": "التنفيذ المباشر يتعلق بالأموال فقط", "correct": false },
+            { "text": "التنفيذ غير المباشر يتطلب إجراءات معقدة", "correct": false },
+            { "text": "التنفيذ المباشر يتم دون تغيير في المراكز القانونية", "correct": true },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "التنفيذ المباشر يتم دون تغيير في المراكز القانونية" }
+    },
+    {
+        "question": "ما هو الفرق بين الالتزام الطبيعي والالتزام المدني؟",
+        "answers": [
+            { "text": "الالتزام الطبيعي لا يمكن فرضه بالقانون", "correct": true },
+            { "text": "الالتزام المدني غير ملزم قانونياً", "correct": false },
+            { "text": "لا يوجد فرق", "correct": false },
+            { "text": "الالتزام الطبيعي ينشأ عن اتفاقات شفوية", "correct": false }
+        ],
+        "correctAnswer": { "text": "الالتزام الطبيعي لا يمكن فرضه بالقانون" }
+    },
+    {
+        "question": "ما هي الغرامة التهديدية؟",
+        "answers": [
+            { "text": "عقوبة مالية", "correct": false },
+            { "text": "وسيلة ضغط على المدين", "correct": true },
+            { "text": "حكم قضائي", "correct": false },
+            { "text": "عرض مالي", "correct": false }
+        ],
+        "correctAnswer": { "text": "وسيلة ضغط على المدين" }
+    },
+    {
+        "question": "في أي حالات يمكن حبس المدين؟",
+        "answers": [
+            { "text": "في جميع الديون", "correct": false },
+            { "text": "في ديون الأحوال الشخصية", "correct": true },
+            { "text": "لا يمكن حبس المدين أبداً", "correct": false },
+            { "text": "في جميع الأحوال", "correct": false }
+        ],
+        "correctAnswer": { "text": "في ديون الأحوال الشخصية" }
+    },
+    {
+        "question": "ما هي العلاقة بين الحق في التنفيذ والحق الموضوعي؟",
+        "answers": [
+            { "text": "الحق في التنفيذ مستقل تماماً", "correct": false },
+            { "text": "الحق في التنفيذ جزء من الحق الموضوعي", "correct": false },
+            { "text": "الحق في التنفيذ شرط للحق الموضوعي", "correct": false },
+            { "text": "لا توجد علاقة", "correct": true }
+        ],
+        "correctAnswer": { "text": "لا توجد علاقة" }
+    },
+    {
+        "question": "كيف يؤثر قانون التنفيذ الجبري على الاقتصاد؟",
+        "answers": [
+            { "text": "يزيد من التجارة", "correct": true },
+            { "text": "يقلل من الثقة", "correct": false },
+            { "text": "لا يؤثر", "correct": false },
+            { "text": "يحسن العلاقات الاجتماعية", "correct": false }
+        ],
+        "correctAnswer": { "text": "يزيد من التجارة" }
+    },
+    {
+        "question": "كيف يتم تحديد الحق في التنفيذ الجبري؟",
+        "answers": [
+            { "text": "بناءً على نوع الالتزام", "correct": false },
+            { "text": "بناءً على نوع الدائن", "correct": false },
+            { "text": "بناءً على السند التنفيذي", "correct": true },
+            { "text": "بناءً على المحكمة", "correct": false }
+        ],
+        "correctAnswer": { "text": "بناءً على السند التنفيذي" }
+    },
+    {
+        "question": "ما هو المعيار الأساسي للتفريق بين التنفيذ المباشر وغير المباشر؟",
+        "answers": [
+            { "text": "نوع الالتزام", "correct": true },
+            { "text": "الجهة المنفذة", "correct": false },
+            { "text": "نوع السند التنفيذي", "correct": false },
+            { "text": "مصلحة المدين", "correct": false }
+        ],
+        "correctAnswer": { "text": "نوع الالتزام" }
+    },
+    {
+        "question": "ما هو شرط إبراء ذمة المدين؟",
+        "answers": [
+            { "text": "قبول الدائن للعرض", "correct": true },
+            { "text": "رفض الدائن للعرض", "correct": false },
+            { "text": "تنفيذ الالتزام جزئياً", "correct": false },
+            { "text": "عدم وجود عقد مكتوب", "correct": false }
+        ],
+        "correctAnswer": { "text": "قبول الدائن للعرض" }
+    },
+    {
+        "question": "ما هي الوسائل القانونية المتاحة للدائن للحصول على حقه؟",
+        "answers": [
+            { "text": "استخدام القوة فقط", "correct": false },
+            { "text": "الوسائل القانونية المنظمة", "correct": true },
+            { "text": "التهديد", "correct": false },
+            { "text": "الإهمال", "correct": false }
+        ],
+        "correctAnswer": { "text": "الوسائل القانونية المنظمة" }
+    },
+    {
+        "question": "ماذا يحدث إذا لم ينفذ المدين التزامه؟",
+        "answers": [
+            { "text": "لا يحدث شيء", "correct": false },
+            { "text": "يمكن للدائن اتخاذ إجراءات قانونية", "correct": true },
+            { "text": "ينقضي الالتزام", "correct": false },
+            { "text": "يُلزم المدين بدفع غرامة", "correct": false }
+        ],
+        "correctAnswer": { "text": "يمكن للدائن اتخاذ إجراءات قانونية" }
+    },
+    {
+        "question": "كيف يؤثر عدم تنفيذ الالتزام على علاقة المدين بالدائن؟",
+        "answers": [
+            { "text": "يحسن العلاقات", "correct": false },
+            { "text": "يسبب توتراً", "correct": true },
+            { "text": "لا يؤثر", "correct": false },
+            { "text": "يخلق فرص جديدة", "correct": false }
+        ],
+        "correctAnswer": { "text": "يسبب توتراً" }
+    },
+    {
+        "question": "ما هو الهدف من منح الدائن الحق في التنفيذ الجبري؟",
+        "answers": [
+            { "text": "حماية حقوق المدين", "correct": false },
+            { "text": "ضمان تنفيذ الالتزامات", "correct": true },
+            { "text": "تقليل الإجراءات القانونية", "correct": false },
+            { "text": "زيادة التعقيد في الإجراءات", "correct": false }
+        ],
+        "correctAnswer": { "text": "ضمان تنفيذ الالتزامات" }
+    },
+    {
+        "question": "ما هي الوسائل القانونية التي يتيحها القانون للدائن لممارسة التنفيذ الجبري؟",
+        "answers": [
+            { "text": "القوة الجسدية", "correct": false },
+            { "text": "إجراءات قانونية محددة", "correct": true },
+            { "text": "التهديد بالحبس", "correct": false },
+            { "text": "إلغاء العقد", "correct": false }
+        ],
+        "correctAnswer": { "text": "إجراءات قانونية محددة" }
+    },
+    {
+        "question": "في أي حالة يتدخل القانون لضمان تنفيذ الالتزام؟",
+        "answers": [
+            { "text": "عندما يكون الدائن غير راضٍ", "correct": false },
+            { "text": "عندما يمتنع المدين عن تنفيذ التزامه", "correct": true },
+            { "text": "عندما يكون هناك نزاع مالي", "correct": false },
+            { "text": "عندما يطلب المدين ذلك", "correct": false }
+        ],
+        "correctAnswer": { "text": "عندما يمتنع المدين عن تنفيذ التزامه" }
+    },
+    {
+        "question": "كيف يحمي القانون المدين ضد تعسف الدائنين؟",
+        "answers": [
+            { "text": "عن طريق فرض غرامات على المدين", "correct": false },
+            { "text": "من خلال تنظيم إجراءات التنفيذ", "correct": true },
+            { "text": "بإلغاء الحقوق القانونية للدائن", "correct": false },
+            { "text": "بزيادة مدة السداد", "correct": false }
+        ],
+        "correctAnswer": { "text": "من خلال تنظيم إجراءات التنفيذ" }
+    },
+    {
+        "question": "ماذا يحدث عندما ينقضي الحق الموضوعي؟",
+        "answers": [
+            { "text": "ينقضي الحق في التنفيذ", "correct": true },
+            { "text": "يبقى الحق في التنفيذ ساريًا", "correct": false },
+            { "text": "يتجدد الحق الموضوعي", "correct": false },
+            { "text": "لا يحدث شيء", "correct": false }
+        ],
+        "correctAnswer": { "text": "ينقضي الحق في التنفيذ" }
+    },
+    {
+        "question": "ما هو النوع الذي لا يمكن للمدين أن يُجبر عليه؟",
+        "answers": [
+            { "text": "الالتزام المدني", "correct": false },
+            { "text": "الالتزام الطبيعي", "correct": true },
+            { "text": "الالتزام التجاري", "correct": false },
+            { "text": "الالتزام المالي", "correct": false }
+        ],
+        "correctAnswer": { "text": "الالتزام الطبيعي" }
+    },
+    {
+        "question": "كيف يمكن تصنيف الالتزامات من حيث الطبيعة؟",
+        "answers": [
+            { "text": "التعاقدية وغير التعاقدية", "correct": true },
+            { "text": "المدنية والطبيعية", "correct": false },
+            { "text": "المالية وغير المالية", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "التعاقدية وغير التعاقدية" }
+    },
+    {
+        "question": "ما هي الآثار القانونية لعدم تنفيذ الالتزام؟",
+        "answers": [
+            { "text": "انقضاء الحق", "correct": false },
+            { "text": "اتخاذ إجراءات قانونية", "correct": true },
+            { "text": "تحسين العلاقات التجارية", "correct": false },
+            { "text": "زيادة الثقة بين الأطراف", "correct": false }
+        ],
+        "correctAnswer": { "text": "اتخاذ إجراءات قانونية" }
+    },
+    {
+        "question": "ما هي الإجراءات المترتبة على إصدار حكم قضائي يلزم المدين بالوفاء؟",
+        "answers": [
+            { "text": "يُلزم المدين بالوفاء فورًا", "correct": true },
+            { "text": "يُلزم المدين بدفع غرامة", "correct": false },
+            { "text": "لا شيء", "correct": false },
+            { "text": "يُعطي المدين فترة زمنية إضافية", "correct": false }
+        ],
+        "correctAnswer": { "text": "يُلزم المدين بالوفاء فورًا" }
+    },
+    {
+        "question": "ما هو السند التنفيذي؟",
+        "answers": [
+            { "text": "وثيقة قانونية تثبت وجود دين", "correct": false },
+            { "text": "حكم قضائي يلزم المدين", "correct": true },
+            { "text": "عقد بين المدين والدائن", "correct": false },
+            { "text": "تقرير مالي", "correct": false }
+        ],
+        "correctAnswer": { "text": "حكم قضائي يلزم المدين" }
+    },
+    {
+        "question": "ما هي الخطوة الأولى في تنفيذ حكم قضائي؟",
+        "answers": [
+            { "text": "رفع دعوى جديدة", "correct": false },
+            { "text": "تقديم طلب تنفيذ", "correct": true },
+            { "text": "إلغاء الحكم", "correct": false },
+            { "text": "التفاوض مع المدين", "correct": false }
+        ],
+        "correctAnswer": { "text": "تقديم طلب تنفيذ" }
+    },
+    {
+        "question": "ما هي العقوبات التي يمكن فرضها على المدين الممتنع عن التنفيذ؟",
+        "answers": [
+            { "text": "السجن", "correct": false },
+            { "text": "الحجز على الأموال", "correct": true },
+            { "text": "الغرامات المالية", "correct": true },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يعكس قانون التنفيذ الجبري مفهوم العدالة؟",
+        "answers": [
+            { "text": "من خلال حماية حقوق المدين فقط", "correct": false },
+            { "text": "من خلال ضمان حقوق الدائنين", "correct": false },
+            { "text": "بتوازن المصالح بين الدائن والمدين", "correct": true },
+            { "text": "بإلغاء الحقوق القانونية", "correct": false }
+        ],
+        "correctAnswer": { "text": "بتوازن المصالح بين الدائن والمدين" }
+    },
+    {
+        "question": "ما هو التنفيذ المباشر؟",
+        "answers": [
+            { "text": "تنفيذ الالتزام بوسائل غير مباشرة", "correct": false },
+            { "text": "إجبار المدين على تنفيذ الالتزام المحدد", "correct": true },
+            { "text": "إلغاء الالتزام", "correct": false },
+            { "text": "تأجيل التنفيذ", "correct": false }
+        ],
+        "correctAnswer": { "text": "إجبار المدين على تنفيذ الالتزام المحدد" }
+    },
+    {
+        "question": "ما هو التنفيذ غير المباشر؟",
+        "answers": [
+            { "text": "تنفيذ الالتزام فوراً", "correct": false },
+            { "text": "استعادة حق الدائن من خلال إجراءات قانونية", "correct": true },
+            { "text": "إلغاء الحكم", "correct": false },
+            { "text": "عدم تنفيذ الالتزام", "correct": false }
+        ],
+        "correctAnswer": { "text": "استعادة حق الدائن من خلال إجراءات قانونية" }
+    },
+    {
+        "question": "ما هو دور الدولة في تنفيذ الالتزامات؟",
+        "answers": [
+            { "text": "إلغاء الالتزامات", "correct": false },
+            { "text": "ضمان تنفيذ الالتزامات بشكل عادل", "correct": true },
+            { "text": "فرض العقوبات", "correct": false },
+            { "text": "تقديم المشورة القانونية", "correct": false }
+        ],
+        "correctAnswer": { "text": "ضمان تنفيذ الالتزامات بشكل عادل" }
+    },
+    {
+        "question": "كيف يؤثر عدم تنفيذ الالتزام على المجتمع ككل؟",
+        "answers": [
+            { "text": "يحسن العلاقات التجارية", "correct": false },
+            { "text": "يؤدي إلى فقدان الثقة في النظام القانوني", "correct": true },
+            { "text": "يزيد من الثقة بين الأطراف", "correct": false },
+            { "text": "لا يؤثر على أي شيء", "correct": false }
+        ],
+        "correctAnswer": { "text": "يؤدي إلى فقدان الثقة في النظام القانوني" }
+    },
+    {
+        "question": "ما هي أهم مبادئ قانون التنفيذ الجبري؟",
+        "answers": [
+            { "text": "حماية المدين فقط", "correct": false },
+            { "text": "ضمان حقوق الدائنين وحماية المدينين", "correct": true },
+            { "text": "زيادة التعقيد في الإجراءات", "correct": false },
+            { "text": "إلغاء الحقوق القانونية", "correct": false }
+        ],
+        "correctAnswer": { "text": "ضمان حقوق الدائنين وحماية المدينين" }
+    },
+    {
+        "question": "ما هو الحق في التنفيذ الجبري؟",
+        "answers": [
+            { "text": "حق المدين في عدم دفع الدين", "correct": false },
+            { "text": "حق الدائن في فرض التنفيذ من خلال القانون", "correct": true },
+            { "text": "حق الدولة في التدخل", "correct": false },
+            { "text": "حق المدين في التفاوض", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق الدائن في فرض التنفيذ من خلال القانون" }
+    },
+    {
+        "question": "ما هي العوامل التي تؤثر في فعالية قانون التنفيذ الجبري؟",
+        "answers": [
+            { "text": "الإجراءات القانونية", "correct": true },
+            { "text": "قدرة الدائن على التحصيل", "correct": true },
+            { "text": "حماية حقوق المدين", "correct": true },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو الالتزام الذي يمكن فرضه بالقوة؟",
+        "answers": [
+            { "text": "الالتزام الطبيعي", "correct": false },
+            { "text": "الالتزام المدني", "correct": true },
+            { "text": "الالتزام الأخلاقي", "correct": false },
+            { "text": "الالتزام الاختياري", "correct": false }
+        ],
+        "correctAnswer": { "text": "الالتزام المدني" }
+    },
+    {
+        "question": "ما هي العوامل التي تؤدي إلى انقضاء الالتزام؟",
+        "answers": [
+            { "text": "الوفاء", "correct": true },
+            { "text": "الاتفاق", "correct": true },
+            { "text": "الاستحالة", "correct": true },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هي الخطوات التي يجب اتخاذها قبل تنفيذ الحكم القضائي؟",
+        "answers": [
+            { "text": "رفع دعوى جديدة", "correct": false },
+            { "text": "التفاوض مع المدين", "correct": false },
+            { "text": "تقديم طلب تنفيذ", "correct": true },
+            { "text": "إلغاء الحكم", "correct": false }
+        ],
+        "correctAnswer": { "text": "تقديم طلب تنفيذ" }
+    },
+    {
+        "question": "ما هو السند التنفيذي؟",
+        "answers": [
+            { "text": "وثيقة قانونية تثبت وجود دين", "correct": false },
+            { "text": "حكم قضائي يلزم المدين", "correct": true },
+            { "text": "عقد بين المدين والدائن", "correct": false },
+            { "text": "تقرير مالي", "correct": false }
+        ],
+        "correctAnswer": { "text": "حكم قضائي يلزم المدين" }
+    },
+    {
+        "question": "كيف يحمي القانون حقوق المدين؟",
+        "answers": [
+            { "text": "بإلغاء جميع حقوق الدائن", "correct": false },
+            { "text": "من خلال تنظيم إجراءات التنفيذ", "correct": true },
+            { "text": "بزيادة مدة السداد", "correct": false },
+            { "text": "بفرض عقوبات على المدين", "correct": false }
+        ],
+        "correctAnswer": { "text": "من خلال تنظيم إجراءات التنفيذ" }
+    },
+    {
+        "question": "ما هي الحقوق الأساسية للدائن عند عدم تنفيذ المدين للالتزام؟",
+        "answers": [
+            { "text": "الحق في التهديد", "correct": false },
+            { "text": "الحق في رفع دعوى", "correct": true },
+            { "text": "الحق في إلغاء العقد", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الحق في رفع دعوى" }
+    },
+    {
+        "question": "ما هي الآثار المترتبة على رفض المدين تنفيذ التزامه؟",
+        "answers": [
+            { "text": "لا تحدث أي آثار", "correct": false },
+            { "text": "يمكن للدائن اتخاذ إجراءات قانونية", "correct": true },
+            { "text": "ينقضي الالتزام", "correct": false },
+            { "text": "يحصل المدين على فترة إضافية", "correct": false }
+        ],
+        "correctAnswer": { "text": "يمكن للدائن اتخاذ إجراءات قانونية" }
+    },
+    {
+        "question": "كيف يمكن للدائن أن يثبت حقه في التنفيذ؟",
+        "answers": [
+            { "text": "من خلال السند التنفيذي", "correct": true },
+            { "text": "من خلال الشهادات الشفهية", "correct": false },
+            { "text": "من خلال الشكاوى", "correct": false },
+            { "text": "من خلال التهديد", "correct": false }
+        ],
+        "correctAnswer": { "text": "من خلال السند التنفيذي" }
+    },
+    {
+        "question": "ما هي الشروط اللازمة لممارسة التنفيذ الجبري؟",
+        "answers": [
+            { "text": "وجود سند تنفيذي", "correct": true },
+            { "text": "عدم وجود مانع قانوني", "correct": true },
+            { "text": "جميع ما سبق", "correct": true },
+            { "text": "لا يوجد شرط", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو الفرق بين التنفيذ الجبري والتنفيذ الاختياري؟",
+        "answers": [
+            { "text": "التنفيذ الجبري يتم بالقوة", "correct": true },
+            { "text": "التنفيذ الاختياري يتم بإرادة المدين", "correct": true },
+            { "text": "كل ما سبق", "correct": true },
+            { "text": "لا يوجد فرق", "correct": false }
+        ],
+        "correctAnswer": { "text": "كل ما سبق" }
+    }
+        ];
+
+        questions.sort(() => Math.random() - 0.5);
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = questions[currentQuestionIndex];
+            const questionElement = document.createElement('div');
+            questionElement.classList.add('question');
+            questionElement.innerText = currentQuestion.question;
+            questionContainer.appendChild(questionElement);
+
+            currentQuestion.answers.sort(() => Math.random() - 0.5);
+
+            currentQuestion.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.innerText = answer.text;
+                button.classList.add('answer');
+                button.addEventListener('click', () => selectAnswer(answer));
+                questionContainer.appendChild(button);
+            });
+
+            questionCountDisplay.innerText = `السؤال ${currentQuestionIndex + 1} من ${questions.length}`;
+        }
+
+        function resetState() {
+            nextButton.style.display = 'none';
+            questionContainer.innerHTML = '';
+        }
+
+        function selectAnswer(answer) {
+            const currentQuestion = questions[currentQuestionIndex];
+
+            const buttons = document.querySelectorAll('.answer');
+            buttons.forEach(button => {
+                button.disabled = true; // تعطيل الأزرار بعد الاختيار
+            });
+
+            if (answer.correct) {
+                score++;
+                scoreDisplay.innerText = `نتيجة: ${score}`;
+            } else {
+                wrongAnswers.push(currentQuestion);
+            }
+
+            buttons.forEach(button => {
+                if (button.innerText === currentQuestion.correctAnswer.text) {
+                    button.classList.add('correct');
+                } else if (button.innerText === answer.text && !answer.correct) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            nextButton.style.display = 'block';
+        }
+
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        });
+
+        function showResult() {
+            questionContainer.style.display = 'none';
+            nextButton.style.display = 'none';
+            resultContainer.style.display = 'block';
+
+            finalScoreDisplay.innerText = `نتيجتك النهائية: ${score} من ${questions.length}`;
+            resultMessage.innerText = 'انتهى الاختبار!';
+
+            if (wrongAnswers.length > 0) {
+                wrongAnswers.forEach(question => {
+                    const wrongAnswerElement = document.createElement('div');
+                    wrongAnswerElement.classList.add('wrong-answer-question');
+                    wrongAnswerElement.innerHTML = `
+                        <div>${question.question}</div>
+                        <div class="correct-answer">الإجابة الصحيحة: ${question.correctAnswer.text}</div>
+                        <ul>
+                            ${question.answers.map(ans => `<li>${ans.text}</li>`).join('')}
+                        </ul>
+                    `;
+                    wrongAnswersContainer.appendChild(wrongAnswerElement);
+                });
+            } else {
+                wrongAnswersContainer.innerHTML = '<div>لا توجد إجابات خاطئة!</div>';
+            }
+        }
+
+        showQuestion();
+    </script>
+</body>
+</html>

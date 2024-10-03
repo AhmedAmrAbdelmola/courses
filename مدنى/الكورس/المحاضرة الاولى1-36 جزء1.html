@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الأسئلة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* منع التمرير العمودي في الجسم */
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex-grow: 1; /* يسمح للحاوية بالنمو لملء المساحة المتاحة */
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* يسمح بالتمرير داخل الحاوية */
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .score {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .question-container {
+            margin-bottom: 20px;
+        }
+
+        .question {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        .answer {
+            display: block;
+            margin: 10px auto;
+            padding: 15px;
+            font-size: 1.2em;
+            background: #e7e7e7;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 80%;
+        }
+
+        .correct {
+            background-color: green;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: red;
+            color: white;
+        }
+
+        .next-button {
+            font-size: 1.5em;
+            background-color: yellow;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            border: 2px solid #ccc;
+        }
+
+        .result-container {
+            display: none;
+        }
+
+        .result-message {
+            font-size: 2em;
+        }
+
+        .final-score {
+            font-size: 1.5em;
+        }
+
+        .wrong-answer-container {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .wrong-answer-question {
+            background-color: #ffe6e6;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 80%;
+            max-width: 400px;
+            border: 1px solid red;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .wrong-answer-question .correct-answer {
+            color: green;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>اختبار الأسئلة</h1>
+        <div id="score" class="score">نتيجة: 0</div>
+        <div id="question-count" class="question-count"></div>
+        <div id="question-container" class="question-container"></div>
+        <button id="next-button" class="next-button" style="display:none;">السؤال التالي</button>
+        <div id="result-container" class="result-container">
+            <div id="result-message" class="result-message"></div>
+            <div id="final-score" class="final-score"></div>
+            <div id="wrong-answers" class="wrong-answer-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const questionContainer = document.getElementById('question-container');
+        const scoreDisplay = document.getElementById('score');
+        const nextButton = document.getElementById('next-button');
+        const questionCountDisplay = document.getElementById('question-count');
+        const resultContainer = document.getElementById('result-container');
+        const resultMessage = document.getElementById('result-message');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const wrongAnswersContainer = document.getElementById('wrong-answers');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let wrongAnswers = [];
+        let questions = [
+        {
+        "question": "ما هي الحقوق العينية الأصلية؟",
+        "answers": [
+            { "text": "الحقوق المشتقة", "correct": false },
+            { "text": "حق الملكية", "correct": true },
+            { "text": "حقوق شخصية", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق الملكية" }
+    },
+    {
+        "question": "ما هو الحق العيني التبعي؟",
+        "answers": [
+            { "text": "حق قائم بذاته", "correct": false },
+            { "text": "حق يضمن وفاء حق آخر", "correct": true },
+            { "text": "حق شخصي", "correct": false },
+            { "text": "حق دائم", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق يضمن وفاء حق آخر" }
+    },
+    {
+        "question": "أي من الحقوق التالية يعتبر حقاً عينياً؟",
+        "answers": [
+            { "text": "حق الدائن", "correct": false },
+            { "text": "حق الملكية", "correct": true },
+            { "text": "حق الانتفاع", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق الملكية" }
+    },
+    {
+        "question": "الحقوق الشخصية تعتمد على:",
+        "answers": [
+            { "text": "علاقة بين شخصين", "correct": true },
+            { "text": "سلطة مباشرة على شيء", "correct": false },
+            { "text": "حقوق عينية", "correct": false },
+            { "text": "ملكية عامة", "correct": false }
+        ],
+        "correctAnswer": { "text": "علاقة بين شخصين" }
+    },
+    {
+        "question": "ما هي أهم خصائص حق الملكية؟",
+        "answers": [
+            { "text": "أنها حق شخصي", "correct": false },
+            { "text": "أنها حق عيني أصلي", "correct": true },
+            { "text": "أنها حق مؤقت", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "أنها حق عيني أصلي" }
+    },
+    {
+        "question": "هل يمكن أن يسقط الحق الشخصي بمرور الزمن؟",
+        "answers": [
+            { "text": "نعم", "correct": true },
+            { "text": "لا", "correct": false }
+        ],
+        "correctAnswer": { "text": "نعم" }
+    },
+    {
+        "question": "ما هو حق الملكية؟",
+        "answers": [
+            { "text": "حق مؤقت", "correct": false },
+            { "text": "سلطة على شيء مادي", "correct": true },
+            { "text": "حق مرتبط بشخص آخر", "correct": false },
+            { "text": "حق شخصي خالص", "correct": false }
+        ],
+        "correctAnswer": { "text": "سلطة على شيء مادي" }
+    },
+    {
+        "question": "ما هي العلاقة بين الحقوق العينية والحقوق الشخصية؟",
+        "answers": [
+            { "text": "لا علاقة", "correct": false },
+            { "text": "الحقوق العينية تعتمد على الحقوق الشخصية", "correct": false },
+            { "text": "الحقوق الشخصية تعتمد على الحقوق العينية", "correct": true },
+            { "text": "كل منهما مستقل", "correct": false }
+        ],
+        "correctAnswer": { "text": "الحقوق الشخصية تعتمد على الحقوق العينية" }
+    },
+    {
+        "question": "ما هي إحدى ميزات الحق العيني؟",
+        "answers": [
+            { "text": "نسبية", "correct": false },
+            { "text": "مطلقة", "correct": true }
+        ],
+        "correctAnswer": { "text": "مطلقة" }
+    },
+    {
+        "question": "كيف يتم تعريف الملكية في اللغة؟",
+        "answers": [
+            { "text": "الاستئثار بالأشياء", "correct": true },
+            { "text": "الانتفاع بالأشياء", "correct": false },
+            { "text": "التصرف في الأشياء", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الاستئثار بالأشياء" }
+    },
+    {
+        "question": "من الخصائص التي يتمتع بها حق الملكية أنه:",
+        "answers": [
+            { "text": "حق مؤقت", "correct": false },
+            { "text": "حق قابل للتقادم", "correct": false },
+            { "text": "حق دائم", "correct": true },
+            { "text": "حق مشروط", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق دائم" }
+    },
+    {
+        "question": "أي الحقائق التالية تعتبر حقوقاً عينية تبعية؟",
+        "answers": [
+            { "text": "حق الملكية", "correct": false },
+            { "text": "حق الانتفاع", "correct": false },
+            { "text": "الرهن", "correct": true },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الرهن" }
+    },
+    {
+        "question": "حق الملكية يشمل:",
+        "answers": [
+            { "text": "الشيء فقط", "correct": false },
+            { "text": "الشيء وثماره", "correct": false },
+            { "text": "الشيء وملحقاته", "correct": false },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو حق الانتفاع؟",
+        "answers": [
+            { "text": "حق التصرف في الشيء", "correct": false },
+            { "text": "حق الاستعمال فقط", "correct": false },
+            { "text": "حق خاص يخول للغير استعمال الشيء", "correct": true },
+            { "text": "حق عيني تبعي", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق خاص يخول للغير استعمال الشيء" }
+    },
+    {
+        "question": "ما هي القيود التي ترد على حق الملكية؟",
+        "answers": [
+            { "text": "قيود قانونية", "correct": true },
+            { "text": "قيود شخصية", "correct": false },
+            { "text": "قيود اجتماعية", "correct": false },
+            { "text": "لا توجد قيود", "correct": false }
+        ],
+        "correctAnswer": { "text": "قيود قانونية" }
+    },
+    {
+        "question": "ما هي العلاقة بين الملكية الشائعة والملكية المفرزة؟",
+        "answers": [
+            { "text": "كلاهما ملكية خاصة", "correct": false },
+            { "text": "الملكية الشائعة تتضمن أكثر من مالك", "correct": true },
+            { "text": "الملكية المفرزة تتعلق بالدولة", "correct": false },
+            { "text": "لا علاقة", "correct": false }
+        ],
+        "correctAnswer": { "text": "الملكية الشائعة تتضمن أكثر من مالك" }
+    },
+    {
+        "question": "ما هي وسائل حماية حق الملكية؟",
+        "answers": [
+            { "text": "دعوى الاستحقاق", "correct": true },
+            { "text": "دعوى الحيازة", "correct": false },
+            { "text": "دعوى التعويض", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "دعوى الاستحقاق" }
+    },
+    {
+        "question": "ما هو نطاق حق الملكية؟",
+        "answers": [
+            { "text": "محدود", "correct": false },
+            { "text": "شامل", "correct": true },
+            { "text": "غير موجود", "correct": false },
+            { "text": "مقيد", "correct": false }
+        ],
+        "correctAnswer": { "text": "شامل" }
+    },
+    {
+        "question": "ما هو الاستغلال في سياق حق الملكية؟",
+        "answers": [
+            { "text": "استخدام الشيء فقط", "correct": false },
+            { "text": "الحصول على المنافع والثمار", "correct": true },
+            { "text": "التصرف في الشيء", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الحصول على المنافع والثمار" }
+    },
+    {
+        "question": "ما هو التصرف المادي في حق الملكية؟",
+        "answers": [
+            { "text": "نقل ملكية الشيء", "correct": false },
+            { "text": "استخدام الشيء", "correct": false },
+            { "text": "تحسين الشيء", "correct": false },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو الفرق بين الحقوق العينية الأصلية والتبعية؟",
+        "answers": [
+            { "text": "الأصلية يمكن أن توجد بشكل مستقل", "correct": true },
+            { "text": "التبعية لا يمكن أن توجد بدون حق آخر", "correct": true },
+            { "text": "الأصلية تتعلق بالأشياء المادية", "correct": true },
+            { "text": "كل ما سبق صحيح", "correct": true }
+        ],
+        "correctAnswer": { "text": "كل ما سبق صحيح" }
+    },
+    {
+        "question": "ما هو المقصود بالملحقات في حق الملكية؟",
+        "answers": [
+            { "text": "العناصر الأساسية", "correct": false },
+            { "text": "الأشياء المعدة لاستعمال الشيء", "correct": true },
+            { "text": "الثمار", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الأشياء المعدة لاستعمال الشيء" }
+    },
+    {
+        "question": "ما الذي يميز حق الملكية عن الحقوق العينية الأخرى؟",
+        "answers": [
+            { "text": "عدم وجود قيود", "correct": false },
+            { "text": "شمولية السلطات", "correct": true },
+            { "text": "عدم القابلية للنقل", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "شمولية السلطات" }
+    },
+    {
+        "question": "كيف يتم تحديد الشيء محل حق الملكية؟",
+        "answers": [
+            { "text": "حسب القيمة السوقية", "correct": false },
+            { "text": "وفقاً للعرف", "correct": false },
+            { "text": "يجب أن يكون معينا بالذات", "correct": true },
+            { "text": "لا توجد معايير محددة", "correct": false }
+        ],
+        "correctAnswer": { "text": "يجب أن يكون معينا بالذات" }
+    },
+    {
+        "question": "ما هو المقصود بالحقوق العينية في القانون؟",
+        "answers": [
+            { "text": "حقوق تتعلق بشخصين", "correct": false },
+            { "text": "سلطات مباشرة لشخص على شيء مادي", "correct": true },
+            { "text": "حقوق تمويلية", "correct": false },
+            { "text": "حقوق اقتصادية", "correct": false }
+        ],
+        "correctAnswer": { "text": "سلطات مباشرة لشخص على شيء مادي" }
+    },
+    {
+        "question": "كيف يتم التعامل مع الملكية العامة في القانون؟",
+        "answers": [
+            { "text": "كملكية خاصة", "correct": false },
+            { "text": "خارج نطاق القانون المدني", "correct": true },
+            { "text": "تتبع حقوق الأفراد", "correct": false },
+            { "text": "يمنع التصرف فيها", "correct": false }
+        ],
+        "correctAnswer": { "text": "خارج نطاق القانون المدني" }
+    },
+    {
+        "question": "ما هي العقوبات المترتبة على انتهاك حق الملكية؟",
+        "answers": [
+            { "text": "الغرامات فقط", "correct": false },
+            { "text": "الحبس", "correct": false },
+            { "text": "التعويضات", "correct": false },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هي القواعد التي تنظم حقوق الارتفاق؟",
+        "answers": [
+            { "text": "تتعلق بالملكية العامة", "correct": false },
+            { "text": "تنظم العلاقات بين الملاك", "correct": true },
+            { "text": "لا تنظمها القوانين", "correct": false },
+            { "text": "تتعلق بالحقوق الشخصية", "correct": false }
+        ],
+        "correctAnswer": { "text": "تنظم العلاقات بين الملاك" }
+    },
+    {
+        "question": "ما هي الأنواع الثلاثة للثمار؟",
+        "answers": [
+            { "text": "طبيعية، صناعية، مدنية", "correct": true },
+            { "text": "دائمة، مؤقتة، عشوائية", "correct": false },
+            { "text": "مباشرة، غير مباشرة، مالية", "correct": false },
+            { "text": "لا توجد تصنيفات", "correct": false }
+        ],
+        "correctAnswer": { "text": "طبيعية، صناعية، مدنية" }
+    },
+    {
+        "question": "ما هو أثر عدم استعمال حق الملكية؟",
+        "answers": [
+            { "text": "يسقط الحق", "correct": false },
+            { "text": "يبقى الحق محفوظاً", "correct": true },
+            { "text": "يتحول إلى حق شخصي", "correct": false },
+            { "text": "لا تأثير له", "correct": false }
+        ],
+        "correctAnswer": { "text": "يبقى الحق محفوظاً" }
+    },
+    {
+        "question": "ما هي الحقوق العينية التي لا تتطلب وجود دائن ومدين؟",
+        "answers": [
+            { "text": "الحقوق الشخصية", "correct": false },
+            { "text": "الحقوق العينية", "correct": true },
+            { "text": "الحقوق العينية التبعية", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الحقوق العينية" }
+    },
+    {
+        "question": "أي من التالي يعتبر حقاً عينياً أصلياً؟",
+        "answers": [
+            { "text": "حق الملكية", "correct": true },
+            { "text": "حق الانتفاع", "correct": false },
+            { "text": "حق الرهن", "correct": false },
+            { "text": "حق السند", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق الملكية" }
+    },
+    {
+        "question": "ما هو المقصود بالحق العيني المطلق؟",
+        "answers": [
+            { "text": "حق يرد على شيء مادي", "correct": false },
+            { "text": "حق يمكن الاحتجاج به في مواجهة الكافة", "correct": true },
+            { "text": "حق مشروط", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق يمكن الاحتجاج به في مواجهة الكافة" }
+    },
+    {
+        "question": "أي من الحقوق التالية يمكن أن تسقط بالتقادم؟",
+        "answers": [
+            { "text": "حق الملكية", "correct": false },
+            { "text": "حق الانتفاع", "correct": true },
+            { "text": "الحقوق العينية", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق الانتفاع" }
+    },
+    {
+        "question": "ما هو نوع الملكية الذي يتضمن أكثر من مالك؟",
+        "answers": [
+            { "text": "الملكية الخاصة", "correct": false },
+            { "text": "الملكية العامة", "correct": false },
+            { "text": "الملكية الشائعة", "correct": true },
+            { "text": "الملكية الفردية", "correct": false }
+        ],
+        "correctAnswer": { "text": "الملكية الشائعة" }
+    },
+    {
+        "question": "لماذا تعتبر الحقوق العينية الأصلية أهم من الحقوق العينية التبعية؟",
+        "answers": [
+            { "text": "لأنها مستقلة بذاتها", "correct": true },
+            { "text": "لأنها تتطلب وجود دائن", "correct": false },
+            { "text": "لأنها تتعلق بالعقارات فقط", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "لأنها مستقلة بذاتها" }
+    },
+    {
+        "question": "ما هو تعريف حق الانتفاع في القانون المدني؟",
+        "answers": [
+            { "text": "حق التصرف في الشيء", "correct": false },
+            { "text": "حق الاستغلال فقط", "correct": false },
+            { "text": "حق استعمال الشيء واستغلاله", "correct": true },
+            { "text": "حق مؤقت", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق استعمال الشيء واستغلاله" }
+    },
+    {
+        "question": "ما هي السلطات التي يتمتع بها مالك الحق العيني؟",
+        "answers": [
+            { "text": "الاستعمال فقط", "correct": false },
+            { "text": "الاستغلال فقط", "correct": false },
+            { "text": "الاستعمال والاستغلال والتصرف", "correct": true },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الاستعمال والاستغلال والتصرف" }
+    },
+    {
+        "question": "ما هو مفهوم الملكية العامة؟",
+        "answers": [
+            { "text": "ملكية الأفراد فقط", "correct": false },
+            { "text": "ملكية الدولة أو الأشخاص المعنوية", "correct": true },
+            { "text": "ملكية خاصة", "correct": false },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "ملكية الدولة أو الأشخاص المعنوية" }
+    },
+    {
+        "question": "ما هي خصائص الحقوق العينية؟",
+        "answers": [
+            { "text": "مطلقة", "correct": true },
+            { "text": "نسبية", "correct": false },
+            { "text": "مؤقتة", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "مطلقة" }
+    },
+    {
+        "question": "أي من الحقوق العينية يمكن أن ينشأ عن تصرف قانوني؟",
+        "answers": [
+            { "text": "حق الانتفاع", "correct": false },
+            { "text": "حق الملكية", "correct": false },
+            { "text": "حق الرهن", "correct": false },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو أثر انتهاك حق الملكية؟",
+        "answers": [
+            { "text": "لا يوجد أثر", "correct": false },
+            { "text": "يحمي القانون مالك الملكية", "correct": true },
+            { "text": "يمكن أن يؤدي إلى فقدان الملكية", "correct": false },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "يحمي القانون مالك الملكية" }
+    },
+    {
+        "question": "كيف يتم تحديد نطاق حق الملكية في العقارات؟",
+        "answers": [
+            { "text": "بموجب القوانين المحلية", "correct": false },
+            { "text": "وفقاً لإرادة المالك", "correct": false },
+            { "text": "حسب العين المملوكة", "correct": true },
+            { "text": "حسب الاستخدام", "correct": false }
+        ],
+        "correctAnswer": { "text": "حسب العين المملوكة" }
+    },
+    {
+        "question": "ما هي عناصر الشيء المملوك؟",
+        "answers": [
+            { "text": "العناصر الجوهرية فقط", "correct": false },
+            { "text": "العناصر الثانوية", "correct": false },
+            { "text": "جميع المكونات", "correct": true },
+            { "text": "لا يوجد عناصر", "correct": false }
+        ],
+        "correctAnswer": { "text": "جميع المكونات" }
+    },
+    {
+        "question": "ما هو المقصود بحق الملكية الحصرية؟",
+        "answers": [
+            { "text": "حق مشترك", "correct": false },
+            { "text": "حق فردي لا يشاركه أحد", "correct": true },
+            { "text": "حق مؤقت", "correct": false },
+            { "text": "حق مقيد", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق فردي لا يشاركه أحد" }
+    },
+    {
+        "question": "ما هو الغرض من الحقوق العينية التبعية؟",
+        "answers": [
+            { "text": "لحماية الملكية", "correct": false },
+            { "text": "لضمان الوفاء بحق شخص آخر", "correct": true },
+            { "text": "لتقوية الحقوق الشخصية", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "لضمان الوفاء بحق شخص آخر" }
+    },
+    {
+        "question": "أي من الحقوق التالية يعتبر حقاً عينياً تبعياً؟",
+        "answers": [
+            { "text": "حق البيع", "correct": false },
+            { "text": "حق الرهن", "correct": true },
+            { "text": "حق الملكية", "correct": false },
+            { "text": "حق الاستئجار", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق الرهن" }
+    },
+    {
+        "question": "ما هي الحقوق الشخصية؟",
+        "answers": [
+            { "text": "حقوق تتعلق بالأشياء المادية", "correct": false },
+            { "text": "حقوق تتعلق بالعلاقات بين الأفراد", "correct": true },
+            { "text": "حقوق تتعلق بالملكية العامة", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "حقوق تتعلق بالعلاقات بين الأفراد" }
+    },
+    {
+        "question": "ما هي العلاقة بين حق الملكية وحق الانتفاع؟",
+        "answers": [
+            { "text": "حق الملكية يتضمن حق الانتفاع", "correct": true },
+            { "text": "حق الانتفاع أقوى من حق الملكية", "correct": false },
+            { "text": "لا علاقة بينهما", "correct": false },
+            { "text": "حق الانتفاع مستقل", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق الملكية يتضمن حق الانتفاع" }
+    },
+    {
+        "question": "ما هي الخصائص القانونية للملكية؟",
+        "answers": [
+            { "text": "أنها حق مؤقت", "correct": false },
+            { "text": "أنها حق دائم", "correct": true },
+            { "text": "أنها حق مشروط", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "أنها حق دائم" }
+    }
+        ];
+
+        questions.sort(() => Math.random() - 0.5);
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = questions[currentQuestionIndex];
+            const questionElement = document.createElement('div');
+            questionElement.classList.add('question');
+            questionElement.innerText = currentQuestion.question;
+            questionContainer.appendChild(questionElement);
+
+            currentQuestion.answers.sort(() => Math.random() - 0.5);
+
+            currentQuestion.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.innerText = answer.text;
+                button.classList.add('answer');
+                button.addEventListener('click', () => selectAnswer(answer));
+                questionContainer.appendChild(button);
+            });
+
+            questionCountDisplay.innerText = `السؤال ${currentQuestionIndex + 1} من ${questions.length}`;
+        }
+
+        function resetState() {
+            nextButton.style.display = 'none';
+            questionContainer.innerHTML = '';
+        }
+
+        function selectAnswer(answer) {
+            const currentQuestion = questions[currentQuestionIndex];
+
+            const buttons = document.querySelectorAll('.answer');
+            buttons.forEach(button => {
+                button.disabled = true; // تعطيل الأزرار بعد الاختيار
+            });
+
+            if (answer.correct) {
+                score++;
+                scoreDisplay.innerText = `نتيجة: ${score}`;
+            } else {
+                wrongAnswers.push(currentQuestion);
+            }
+
+            buttons.forEach(button => {
+                if (button.innerText === currentQuestion.correctAnswer.text) {
+                    button.classList.add('correct');
+                } else if (button.innerText === answer.text && !answer.correct) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            nextButton.style.display = 'block';
+        }
+
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        });
+
+        function showResult() {
+            questionContainer.style.display = 'none';
+            nextButton.style.display = 'none';
+            resultContainer.style.display = 'block';
+
+            finalScoreDisplay.innerText = `نتيجتك النهائية: ${score} من ${questions.length}`;
+            resultMessage.innerText = 'انتهى الاختبار!';
+
+            if (wrongAnswers.length > 0) {
+                wrongAnswers.forEach(question => {
+                    const wrongAnswerElement = document.createElement('div');
+                    wrongAnswerElement.classList.add('wrong-answer-question');
+                    wrongAnswerElement.innerHTML = `
+                        <div>${question.question}</div>
+                        <div class="correct-answer">الإجابة الصحيحة: ${question.correctAnswer.text}</div>
+                        <ul>
+                            ${question.answers.map(ans => `<li>${ans.text}</li>`).join('')}
+                        </ul>
+                    `;
+                    wrongAnswersContainer.appendChild(wrongAnswerElement);
+                });
+            } else {
+                wrongAnswersContainer.innerHTML = '<div>لا توجد إجابات خاطئة!</div>';
+            }
+        }
+
+        showQuestion();
+    </script>
+</body>
+</html>

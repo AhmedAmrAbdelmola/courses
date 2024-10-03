@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الأسئلة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* منع التمرير العمودي في الجسم */
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex-grow: 1; /* يسمح للحاوية بالنمو لملء المساحة المتاحة */
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* يسمح بالتمرير داخل الحاوية */
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .score {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .question-container {
+            margin-bottom: 20px;
+        }
+
+        .question {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        .answer {
+            display: block;
+            margin: 10px auto;
+            padding: 15px;
+            font-size: 1.2em;
+            background: #e7e7e7;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 80%;
+        }
+
+        .correct {
+            background-color: green;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: red;
+            color: white;
+        }
+
+        .next-button {
+            font-size: 1.5em;
+            background-color: yellow;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            border: 2px solid #ccc;
+        }
+
+        .result-container {
+            display: none;
+        }
+
+        .result-message {
+            font-size: 2em;
+        }
+
+        .final-score {
+            font-size: 1.5em;
+        }
+
+        .wrong-answer-container {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .wrong-answer-question {
+            background-color: #ffe6e6;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 80%;
+            max-width: 400px;
+            border: 1px solid red;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .wrong-answer-question .correct-answer {
+            color: green;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>اختبار الأسئلة</h1>
+        <div id="score" class="score">نتيجة: 0</div>
+        <div id="question-count" class="question-count"></div>
+        <div id="question-container" class="question-container"></div>
+        <button id="next-button" class="next-button" style="display:none;">السؤال التالي</button>
+        <div id="result-container" class="result-container">
+            <div id="result-message" class="result-message"></div>
+            <div id="final-score" class="final-score"></div>
+            <div id="wrong-answers" class="wrong-answer-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const questionContainer = document.getElementById('question-container');
+        const scoreDisplay = document.getElementById('score');
+        const nextButton = document.getElementById('next-button');
+        const questionCountDisplay = document.getElementById('question-count');
+        const resultContainer = document.getElementById('result-container');
+        const resultMessage = document.getElementById('result-message');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const wrongAnswersContainer = document.getElementById('wrong-answers');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let wrongAnswers = [];
+        let questions = [
+            {
+        "question": "ما هو موضوع قواعد تنازع القوانين؟",
+        "answers": [
+            { "text": "القانون الجنائي", "correct": false },
+            { "text": "القانون الدولي الخاص", "correct": true },
+            { "text": "القانون الإداري", "correct": false },
+            { "text": "القانون الدستوري", "correct": false }
+        ],
+        "correctAnswer": { "text": "القانون الدولي الخاص" }
+    },
+    {
+        "question": "ما هي العلاقات التي تتناولها قواعد تنازع القوانين؟",
+        "answers": [
+            { "text": "العلاقات الدولية فقط", "correct": false },
+            { "text": "العلاقات الوطنية فقط", "correct": false },
+            { "text": "العلاقات الخاصة ذات الطابع الدولي", "correct": true },
+            { "text": "العلاقات التجارية فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "العلاقات الخاصة ذات الطابع الدولي" }
+    },
+    {
+        "question": "ماذا يعني وجود عنصر أجنبي في العلاقة القانونية؟",
+        "answers": [
+            { "text": "تعني أنها علاقة وطنية", "correct": false },
+            { "text": "تعني أنها علاقة ذات طابع دولي", "correct": true },
+            { "text": "تعني أنها علاقة غير قانونية", "correct": false },
+            { "text": "لا تعني شيئًا", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعني أنها علاقة ذات طابع دولي" }
+    },
+    {
+        "question": "ما هو المبدأ الأساسي لقواعد تنازع القوانين؟",
+        "answers": [
+            { "text": "تطبيق القوانين المحلية فقط", "correct": false },
+            { "text": "اختيار أنسب القوانين المتنازعة", "correct": true },
+            { "text": "تجاهل القوانين الأجنبية", "correct": false },
+            { "text": "تطبيق القوانين التجارية فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "اختيار أنسب القوانين المتنازعة" }
+    },
+    {
+        "question": "ما هي أولى العقبات التي تواجه القاضي عند تطبيق قاعدة الإسناد؟",
+        "answers": [
+            { "text": "مشكلة التكييف", "correct": true },
+            { "text": "مشكلة الإحالة", "correct": false },
+            { "text": "مشكلة الاختصاص", "correct": false },
+            { "text": "مشكلة النظام العام", "correct": false }
+        ],
+        "correctAnswer": { "text": "مشكلة التكييف" }
+    },
+    {
+        "question": "ما هو المقصود بمشكلة الإحالة؟",
+        "answers": [
+            { "text": "العودة لقانون القاضي", "correct": true },
+            { "text": "تطبيق قانون أجنبي", "correct": false },
+            { "text": "تحديد الوصف القانوني للعلاقة", "correct": false },
+            { "text": "عدم تطبيق أي قانون", "correct": false }
+        ],
+        "correctAnswer": { "text": "العودة لقانون القاضي" }
+    },
+    {
+        "question": "ماذا يتطلب من القاضي عند مواجهة مشكلة تنازع القوانين؟",
+        "answers": [
+            { "text": "تطبيق القانون الذي يريده", "correct": false },
+            { "text": "تجاهل القوانين الأخرى", "correct": false },
+            { "text": "البحث عن قاعدة الإسناد المناسبة", "correct": true },
+            { "text": "تطبيق القانون المحلي فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "البحث عن قاعدة الإسناد المناسبة" }
+    },
+    {
+        "question": "ما هو الأسلوب التقليدي لحل مشكلة تنازع القوانين؟",
+        "answers": [
+            { "text": "تطبيق القوانين الإقليمية", "correct": false },
+            { "text": "قواعد الإسناد", "correct": true },
+            { "text": "القوانين الموضوعية", "correct": false },
+            { "text": "اللجوء إلى التحكيم", "correct": false }
+        ],
+        "correctAnswer": { "text": "قواعد الإسناد" }
+    },
+    {
+        "question": "من هو الفقيه الذي دعا للعودة إلى المنهج التحليلي في تنازع القوانين؟",
+        "answers": [
+            { "text": "دار جنتريه", "correct": false },
+            { "text": "مانشيني", "correct": false },
+            { "text": "سافيني", "correct": true },
+            { "text": "ديكارت", "correct": false }
+        ],
+        "correctAnswer": { "text": "سافيني" }
+    },
+    {
+        "question": "ما هي المرحلة التاريخية الأولى في تطور قواعد تنازع القوانين؟",
+        "answers": [
+            { "text": "نظرية إقليمية القوانين", "correct": false },
+            { "text": "فقه مدرسة الأحوال", "correct": true },
+            { "text": "فقه القانون العام", "correct": false },
+            { "text": "النظرية الحديثة", "correct": false }
+        ],
+        "correctAnswer": { "text": "فقه مدرسة الأحوال" }
+    },
+    {
+        "question": "كيف يمكن تصنيف العلاقات التي تقع تحت نطاق تنازع القوانين؟",
+        "answers": [
+            { "text": "علاقات وطنية فقط", "correct": false },
+            { "text": "علاقات عامة فقط", "correct": false },
+            { "text": "علاقات خاصة ذات طابع دولي", "correct": true },
+            { "text": "علاقات تجارية فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "علاقات خاصة ذات طابع دولي" }
+    },
+    {
+        "question": "ما هي النتيجة التي يترتب على عدم اعتراف دولة ما بدولة أخرى في موضوع تنازع القوانين؟",
+        "answers": [
+            { "text": "لا يوجد تنازع بين القوانين", "correct": true },
+            { "text": "تطبيق القوانين المحلية فقط", "correct": false },
+            { "text": "الاعتراف بالحقوق الدولية", "correct": false },
+            { "text": "تطبيق القوانين الأجنبية", "correct": false }
+        ],
+        "correctAnswer": { "text": "لا يوجد تنازع بين القوانين" }
+    },
+    {
+        "question": "ماذا يعني مفهوم النظام العام في سياق تنازع القوانين؟",
+        "answers": [
+            { "text": "تطبيق القوانين الأجنبية فقط", "correct": false },
+            { "text": "عدم تطبيق أي قانون خارجي", "correct": false },
+            { "text": "رفض تطبيق القانون الأجنبي المتعارض مع المبادئ الأساسية", "correct": true },
+            { "text": "تطبيق جميع القوانين على قدم المساواة", "correct": false }
+        ],
+        "correctAnswer": { "text": "رفض تطبيق القانون الأجنبي المتعارض مع المبادئ الأساسية" }
+    },
+    {
+        "question": "ما هي العقبة الثالثة التي تواجه القاضي عند تطبيق قاعدة الإسناد؟",
+        "answers": [
+            { "text": "مشكلة التكييف", "correct": false },
+            { "text": "مشكلة الإحالة", "correct": false },
+            { "text": "الإسناد إلى نظام قانوني مركب", "correct": true },
+            { "text": "مشكلة النظام العام", "correct": false }
+        ],
+        "correctAnswer": { "text": "الإسناد إلى نظام قانوني مركب" }
+    },
+    {
+        "question": "كيف يمكن أن يؤثر عنصر الأشخاص على وصف العلاقة القانونية؟",
+        "answers": [
+            { "text": "يؤدي إلى اعتبارها وطنية", "correct": false },
+            { "text": "يزيد من تعقيدها", "correct": false },
+            { "text": "يؤدي إلى اعتبارها دولية", "correct": true },
+            { "text": "لا يؤثر إطلاقاً", "correct": false }
+        ],
+        "correctAnswer": { "text": "يؤدي إلى اعتبارها دولية" }
+    },
+    {
+        "question": "ما هو دور القاضي عند وجود قوانين متعددة داخل دولة واحدة؟",
+        "answers": [
+            { "text": "تطبيق القانون الأكثر صرامة", "correct": false },
+            { "text": "اختيار القانون الأكثر ملاءمة", "correct": true },
+            { "text": "تجاهل القوانين المختلفة", "correct": false },
+            { "text": "تطبيق جميع القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "اختيار القانون الأكثر ملاءمة" }
+    },
+    {
+        "question": "ما هي فكرة الإقليمية في تنازع القوانين؟",
+        "answers": [
+            { "text": "تطبيق القوانين الأجنبية في جميع الحالات", "correct": false },
+            { "text": "عدم إمكانية تطبيق قانون دولة أمام قضاء دولة أخرى", "correct": true },
+            { "text": "عدم وجود شرائع إقليمية", "correct": false },
+            { "text": "تطبيق القوانين المحلية فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "عدم إمكانية تطبيق قانون دولة أمام قضاء دولة أخرى" }
+    },
+    {
+        "question": "كيف يؤثر عدم اعتراف دولة بحكومة دولة أخرى على تطبيق القوانين؟",
+        "answers": [
+            { "text": "يمنع تطبيق أي قانون", "correct": false },
+            { "text": "لا يمنع تطبيق القوانين الصادرة عن الدولة", "correct": true },
+            { "text": "يؤدي إلى تطبيق القوانين القديمة فقط", "correct": false },
+            { "text": "يسمح بتطبيق جميع القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "لا يمنع تطبيق القوانين الصادرة عن الدولة" }
+    },
+    {
+        "question": "ما هي أبرز التحديات التي تواجه قواعد تنازع القوانين في العصر الحديث؟",
+        "answers": [
+            { "text": "عدم وجود قوانين كافية", "correct": false },
+            { "text": "التغييرات السريعة في القوانين الوطنية والدولية", "correct": true },
+            { "text": "تعدد القوانين المتنازعة", "correct": false },
+            { "text": "عدم وجود قضاة أكفاء", "correct": false }
+        ],
+        "correctAnswer": { "text": "التغييرات السريعة في القوانين الوطنية والدولية" }
+    },
+    {
+        "question": "ما هو الهدف من قواعد الإسناد؟",
+        "answers": [
+            { "text": "توفير حلول قانونية لجميع النزاعات", "correct": false },
+            { "text": "توجيه القاضي لتطبيق القانون المناسب", "correct": true },
+            { "text": "منع حدوث النزاعات", "correct": false },
+            { "text": "تعزيز السيادة الوطنية", "correct": false }
+        ],
+        "correctAnswer": { "text": "توجيه القاضي لتطبيق القانون المناسب" }
+    },
+    {
+        "question": "ما هي العلاقة التي تمثل محور قواعد تنازع القوانين؟",
+        "answers": [
+            { "text": "العلاقات العامة", "correct": false },
+            { "text": "العلاقات الخاصة الدولية", "correct": true },
+            { "text": "العلاقات التجارية", "correct": false },
+            { "text": "العلاقات الحكومية", "correct": false }
+        ],
+        "correctAnswer": { "text": "العلاقات الخاصة الدولية" }
+    },
+    {
+        "question": "ما هو الهدف من قواعد تنازع القوانين؟",
+        "answers": [
+            { "text": "تحديد القوانين المحلية", "correct": false },
+            { "text": "اختيار القانون المناسب لحكم العلاقة", "correct": true },
+            { "text": "الحماية من القوانين الأجنبية", "correct": false },
+            { "text": "تعزيز الاقتصاد الوطني", "correct": false }
+        ],
+        "correctAnswer": { "text": "اختيار القانون المناسب لحكم العلاقة" }
+    },
+    {
+        "question": "ما هو التعريف الدقيق لتنازع القوانين؟",
+        "answers": [
+            { "text": "الصراع بين القوانين المحلية", "correct": false },
+            { "text": "الاختلاف بين القوانين الوطنية", "correct": false },
+            { "text": "الاختيار بين القوانين المتنازعة لحكم العلاقات ذات الطابع الدولي", "correct": true },
+            { "text": "عدم تطبيق القوانين الأجنبية", "correct": false }
+        ],
+        "correctAnswer": { "text": "الاختيار بين القوانين المتنازعة لحكم العلاقات ذات الطابع الدولي" }
+    },
+    {
+        "question": "ما هي القوانين التي تثير مشكلة تنازع القوانين؟",
+        "answers": [
+            { "text": "القوانين الإدارية", "correct": false },
+            { "text": "القوانين الجنائية", "correct": false },
+            { "text": "القوانين الخاصة", "correct": true },
+            { "text": "القوانين الدستورية", "correct": false }
+        ],
+        "correctAnswer": { "text": "القوانين الخاصة" }
+    },
+    {
+        "question": "ما هي أولى مراحل تطور قواعد تنازع القوانين؟",
+        "answers": [
+            { "text": "المدرسة الفرنسية", "correct": false },
+            { "text": "المدرسة الإيطالية القديمة", "correct": true },
+            { "text": "المدرسة الألمانية", "correct": false },
+            { "text": "المدرسة الأمريكية", "correct": false }
+        ],
+        "correctAnswer": { "text": "المدرسة الإيطالية القديمة" }
+    },
+    {
+        "question": "كيف تمثل القاعدة القانونية في حل مشكلة تنازع القوانين؟",
+        "answers": [
+            { "text": "قاعدة واحدة لجميع القوانين", "correct": false },
+            { "text": "قواعد إسناد", "correct": true },
+            { "text": "قواعد موضوعية", "correct": false },
+            { "text": "قواعد إجرائية", "correct": false }
+        ],
+        "correctAnswer": { "text": "قواعد إسناد" }
+    },
+    {
+        "question": "ما هو مفهوم \"التكييف\" في سياق قواعد تنازع القوانين؟",
+        "answers": [
+            { "text": "تحديد القانون الواجب التطبيق", "correct": false },
+            { "text": "وصف العلاقة القانونية", "correct": true },
+            { "text": "فهم النصوص القانونية", "correct": false },
+            { "text": "تطبيق القوانين المحلية", "correct": false }
+        ],
+        "correctAnswer": { "text": "وصف العلاقة القانونية" }
+    },
+    {
+        "question": "ما هو الفرق بين الإقليمية والشخصية في قوانين تنازع القوانين؟",
+        "answers": [
+            { "text": "لا يوجد فرق", "correct": false },
+            { "text": "الإقليمية تتعلق بالمكان، والشخصية تتعلق بالأشخاص", "correct": true },
+            { "text": "الإقليمية تتعلق بالأشخاص، والشخصية تتعلق بالمكان", "correct": false },
+            { "text": "الإقليمية هي قانون واحد، والشخصية قانون آخر", "correct": false }
+        ],
+        "correctAnswer": { "text": "الإقليمية تتعلق بالمكان، والشخصية تتعلق بالأشخاص" }
+    },
+    {
+        "question": "ماذا يعني \"الدفع بالنظام العام\" في سياق تطبيق القوانين الأجنبية؟",
+        "answers": [
+            { "text": "تطبيق القوانين الأجنبية دائماً", "correct": false },
+            { "text": "رفض تطبيق القانون الأجنبي المتعارض مع المبادئ الأساسية", "correct": true },
+            { "text": "تطبيق القوانين المحلية فقط", "correct": false },
+            { "text": "عدم وجود نظام قانوني", "correct": false }
+        ],
+        "correctAnswer": { "text": "رفض تطبيق القانون الأجنبي المتعارض مع المبادئ الأساسية" }
+    },
+    {
+        "question": "ما هو المبدأ الذي يتبعه الفقه التقليدي في علاقات القانون العام؟",
+        "answers": [
+            { "text": "تطبيق القوانين الأجنبية", "correct": false },
+            { "text": "تطبيق القوانين المحلية فقط", "correct": true },
+            { "text": "تجاهل القوانين العامة", "correct": false },
+            { "text": "تطبيق جميع القوانين بالتساوي", "correct": false }
+        ],
+        "correctAnswer": { "text": "تطبيق القوانين المحلية فقط" }
+    },
+    {
+        "question": "ما هي مشكلة \"الإسناد إلى نظام قانوني مركب\"؟",
+        "answers": [
+            { "text": "تعدد القوانين داخل دولة واحدة", "correct": false },
+            { "text": "تحديد أي قانون يطبق عند وجود قوانين متعددة", "correct": true },
+            { "text": "عدم وجود قوانين كافية", "correct": false },
+            { "text": "عدم الاعتراف بالقوانين الأجنبية", "correct": false }
+        ],
+        "correctAnswer": { "text": "تحديد أي قانون يطبق عند وجود قوانين متعددة" }
+    },
+    {
+        "question": "كيف يتم تحديد نطاق تطبيق قواعد تنازع القوانين؟",
+        "answers": [
+            { "text": "بناءً على رغبة القاضي", "correct": false },
+            { "text": "بناءً على القوانين المحلية فقط", "correct": false },
+            { "text": "بناءً على طبيعة العلاقة القانونية", "correct": true },
+            { "text": "بناءً على القوانين التجارية فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "بناءً على طبيعة العلاقة القانونية" }
+    },
+    {
+        "question": "ما هو تأثير عدم الاعتراف بدولة معينة على القوانين؟",
+        "answers": [
+            { "text": "يؤدي إلى عدم وجود قوانين", "correct": false },
+            { "text": "يمنع حدوث أي تنازع", "correct": false },
+            { "text": "يمنع الاعتراف بالقوانين التي تضعها تلك الدولة", "correct": true },
+            { "text": "يسمح بتطبيق القوانين القديمة", "correct": false }
+        ],
+        "correctAnswer": { "text": "يمنع الاعتراف بالقوانين التي تضعها تلك الدولة" }
+    },
+    {
+        "question": "كيف يمكن أن تؤثر العلاقات الدولية على تطور قواعد تنازع القوانين؟",
+        "answers": [
+            { "text": "لا تؤثر إطلاقاً", "correct": false },
+            { "text": "تزيد من تعقيد القوانين", "correct": true },
+            { "text": "تؤدي إلى تحديث القوانين", "correct": false },
+            { "text": "تجعل القوانين أكثر مرونة", "correct": false }
+        ],
+        "correctAnswer": { "text": "تزيد من تعقيد القوانين" }
+    },
+    {
+        "question": "ما هو تأثير القوانين القديمة عند عدم الاعتراف بحكومة جديدة؟",
+        "answers": [
+            { "text": "يتم تطبيق القوانين القديمة فقط", "correct": true },
+            { "text": "يتم تجاهل القوانين بالكامل", "correct": false },
+            { "text": "يتم تطبيق القوانين الجديدة فقط", "correct": false },
+            { "text": "لا يوجد تأثير", "correct": false }
+        ],
+        "correctAnswer": { "text": "يتم تطبيق القوانين القديمة فقط" }
+    },
+    {
+        "question": "ما هو دور القاضي في حالة وجود تنازع بين القوانين؟",
+        "answers": [
+            { "text": "إلغاء جميع القوانين", "correct": false },
+            { "text": "البحث عن القاعدة الأنسب للتطبيق", "correct": true },
+            { "text": "تطبيق القانون المحلي فقط", "correct": false },
+            { "text": "تجاهل القوانين المختلفة", "correct": false }
+        ],
+        "correctAnswer": { "text": "البحث عن القاعدة الأنسب للتطبيق" }
+    },
+    {
+        "question": "ما هو مفهوم \"التعدد الإقليمي\" في سياق القانون؟",
+        "answers": [
+            { "text": "وجود عدة دول تتنازع", "correct": false },
+            { "text": "كل إقليم لديه شريعته الخاصة", "correct": true },
+            { "text": "تعدد القوانين في دولة واحدة", "correct": false },
+            { "text": "عدم وجود أي قوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "كل إقليم لديه شريعته الخاصة" }
+    },
+    {
+        "question": "كيف يمكن أن يؤثر عنصر السبب على العلاقة القانونية؟",
+        "answers": [
+            { "text": "يزيد من تعقيدها", "correct": false },
+            { "text": "يؤدي إلى اعتبارها وطنية", "correct": false },
+            { "text": "يؤدي إلى اعتبارها دولية", "correct": true },
+            { "text": "لا يؤثر على أي شيء", "correct": false }
+        ],
+        "correctAnswer": { "text": "يؤدي إلى اعتبارها دولية" }
+    },
+    {
+        "question": "ما هي النتيجة التي تترتب على وجود عنصر أجنبي في العلاقة؟",
+        "answers": [
+            { "text": "تصبح العلاقة وطنية", "correct": false },
+            { "text": "تصبح العلاقة ذات طابع دولي", "correct": true },
+            { "text": "لا تتأثر العلاقة", "correct": false },
+            { "text": "يتم إلغاء العلاقة", "correct": false }
+        ],
+        "correctAnswer": { "text": "تصبح العلاقة ذات طابع دولي" }
+    },
+    {
+        "question": "ما هو التأثير المحتمل لعدم الاعتراف بحكومة على تطبيق القوانين؟",
+        "answers": [
+            { "text": "يؤثر على جميع القوانين", "correct": false },
+            { "text": "لا يؤثر على القوانين المعمول بها", "correct": true },
+            { "text": "يؤدي إلى تطبيق القانون القديم", "correct": false },
+            { "text": "يؤدي إلى تطبيق القانون الجديد", "correct": false }
+        ],
+        "correctAnswer": { "text": "لا يؤثر على القوانين المعمول بها" }
+    },
+    {
+        "question": "كيف يتم تصنيف العلاقات التي تدخل تحت نطاق تنازع القوانين؟",
+        "answers": [
+            { "text": "علاقات قانونية فقط", "correct": false },
+            { "text": "علاقات دولية فقط", "correct": false },
+            { "text": "علاقات خاصة ذات طابع دولي", "correct": true },
+            { "text": "علاقات تجارية فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "علاقات خاصة ذات طابع دولي" }
+    },
+    {
+        "question": "ما هو الأسلوب الذي يتبعه الفقهاء لحل مشكلة تنازع القوانين؟",
+        "answers": [
+            { "text": "تجاهل القوانين", "correct": false },
+            { "text": "تطبيق القوانين المحلية", "correct": false },
+            { "text": "استخدام قواعد الإسناد", "correct": true },
+            { "text": "استخدام السبل الدبلوماسية", "correct": false }
+        ],
+        "correctAnswer": { "text": "استخدام قواعد الإسناد" }
+    },
+    {
+        "question": "ما هي النتيجة المترتبة على عدم وجود قاعدة إسناد صحيحة؟",
+        "answers": [
+            { "text": "تطبيق القانون المحلي", "correct": false },
+            { "text": "تطبيق القانون الأجنبي", "correct": false },
+            { "text": "عدم القدرة على حل النزاع", "correct": true },
+            { "text": "تطبيق جميع القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "عدم القدرة على حل النزاع" }
+    },
+    {
+        "question": "ما هو الهدف من وجود قواعد الإسناد؟",
+        "answers": [
+            { "text": "توجيه القضاة لتطبيق القوانين", "correct": true },
+            { "text": "تحديد العقوبات", "correct": false },
+            { "text": "فرض قوانين جديدة", "correct": false },
+            { "text": "إلغاء القوانين القديمة", "correct": false }
+        ],
+        "correctAnswer": { "text": "توجيه القضاة لتطبيق القوانين" }
+    },
+    {
+        "question": "ما هو المفهوم الذي يحدد العلاقة بين القوانين المختلفة؟",
+        "answers": [
+            { "text": "التكييف", "correct": false },
+            { "text": "الإحالة", "correct": true },
+            { "text": "الإقليمية", "correct": false },
+            { "text": "النظام العام", "correct": false }
+        ],
+        "correctAnswer": { "text": "الإحالة" }
+    },
+    {
+        "question": "ما هو تأثير القوانين العامة على تنازع القوانين؟",
+        "answers": [
+            { "text": "لا تؤثر مطلقاً", "correct": false },
+            { "text": "قد تؤثر في بعض الحالات", "correct": true },
+            { "text": "تؤثر بشكل دائم", "correct": false },
+            { "text": "تؤثر سلباً فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "قد تؤثر في بعض الحالات" }
+    },
+    {
+        "question": "كيف يتم التعامل مع العلاقات التي تشمل عناصر متعددة؟",
+        "answers": [
+            { "text": "تجاهل جميع العناصر", "correct": false },
+            { "text": "البحث عن العناصر الأكثر تأثيراً", "correct": false },
+            { "text": "تطبيق القوانين بناءً على العنصر السائد", "correct": true },
+            { "text": "تطبيق القوانين بشكل متساوي", "correct": false }
+        ],
+        "correctAnswer": { "text": "تطبيق القوانين بناءً على العنصر السائد" }
+    },
+    {
+        "question": "ما هو مفهوم \"الفقيه\" في سياق تنازع القوانين؟",
+        "answers": [
+            { "text": "القاضي", "correct": false },
+            { "text": "الشخص الذي يدرس القوانين", "correct": true },
+            { "text": "المحامي", "correct": false },
+            { "text": "الشخص الذي يكتب القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "الشخص الذي يدرس القوانين" }
+    },
+    {
+        "question": "ما هو التأثير المحتمل لتطبيق القانون الأجنبي؟",
+        "answers": [
+            { "text": "عدم استقرار العلاقات القانونية", "correct": false },
+            { "text": "زيادة التعقيد", "correct": false },
+            { "text": "تحقيق العدالة", "correct": true },
+            { "text": "إلغاء القوانين المحلية", "correct": false }
+        ],
+        "correctAnswer": { "text": "تحقيق العدالة" }
+    },
+    {
+        "question": "ما هو الهدف من دراسة تاريخ تنازع القوانين؟",
+        "answers": [
+            { "text": "فهم القوانين الحالية", "correct": false },
+            { "text": "تطوير قوانين جديدة", "correct": false },
+            { "text": "استنتاج المبادئ الأساسية", "correct": false },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو مفهوم \"التعدد الشخصي\" في قوانين تنازع القوانين؟",
+        "answers": [
+            { "text": "تعدد العلاقات القانونية", "correct": false },
+            { "text": "تعدد الشرائع داخل الدولة الواحدة", "correct": true },
+            { "text": "تعدد الدول المشاركة في النزاع", "correct": false },
+            { "text": "تعدد القوانين التجارية", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعدد الشرائع داخل الدولة الواحدة" }
+    },
+    {
+        "question": "كيف يؤثر عنصر الموضوع على وصف العلاقة القانونية؟",
+        "answers": [
+            { "text": "يؤدي إلى اعتبارها وطنية", "correct": false },
+            { "text": "يؤدي إلى اعتبارها دولية", "correct": true },
+            { "text": "لا يؤثر على أي شيء", "correct": false },
+            { "text": "يؤدي إلى إلغاء العلاقة", "correct": false }
+        ],
+        "correctAnswer": { "text": "يؤدي إلى اعتبارها دولية" }
+    },
+    {
+        "question": "ما هو الأسلوب الذي اتبعه الفقهاء لحل مشكلة تنازع القوانين؟",
+        "answers": [
+            { "text": "تطبيق القوانين القديمة فقط", "correct": false },
+            { "text": "استخدام قواعد إسناد معينة", "correct": true },
+            { "text": "تجاهل جميع القوانين", "correct": false },
+            { "text": "تطبيق القوانين المحلية فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "استخدام قواعد إسناد معينة" }
+    },
+    {
+        "question": "ما هي النتيجة المترتبة على عدم الاعتراف بدولة معينة؟",
+        "answers": [
+            { "text": "عدم وجود قوانين", "correct": false },
+            { "text": "عدم وجود تنازع", "correct": true },
+            { "text": "عدم تطبيق القوانين", "correct": false },
+            { "text": "تطبيق القوانين القديمة فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "عدم وجود تنازع" }
+    },
+    {
+        "question": "كيف يمكن أن تؤثر العلاقات الدولية على تطور قواعد تنازع القوانين؟",
+        "answers": [
+            { "text": "تزيد من تعقيد القوانين", "correct": true },
+            { "text": "تؤدي إلى تحديث القوانين", "correct": false },
+            { "text": "لا تؤثر إطلاقاً", "correct": false },
+            { "text": "تجعل القوانين أكثر مرونة", "correct": false }
+        ],
+        "correctAnswer": { "text": "تزيد من تعقيد القوانين" }
+    },
+    {
+        "question": "ما هو التأثير المحتمل لعدم الاعتراف بحكومة جديدة؟",
+        "answers": [
+            { "text": "يؤدي إلى تطبيق القوانين القديمة", "correct": true },
+            { "text": "يؤدي إلى تجاهل جميع القوانين", "correct": false },
+            { "text": "يؤدي إلى تطبيق القوانين المحلية فقط", "correct": false },
+            { "text": "لا يؤثر على أي شيء", "correct": false }
+        ],
+        "correctAnswer": { "text": "يؤدي إلى تطبيق القوانين القديمة" }
+    },
+    {
+        "question": "كيف يتم تحديد نطاق تطبيق قواعد تنازع القوانين؟",
+        "answers": [
+            { "text": "بناءً على رغبة القاضي", "correct": false },
+            { "text": "بناءً على القوانين المحلية فقط", "correct": false },
+            { "text": "بناءً على طبيعة العلاقة القانونية", "correct": true },
+            { "text": "بناءً على القوانين التجارية فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "بناءً على طبيعة العلاقة القانونية" }
+    },
+    {
+        "question": "ما هو دور القاضي عند وجود تنازع بين القوانين؟",
+        "answers": [
+            { "text": "تجاهل جميع القوانين", "correct": false },
+            { "text": "البحث عن القاعدة الأنسب للتطبيق", "correct": true },
+            { "text": "تطبيق القانون المحلي فقط", "correct": false },
+            { "text": "تجاهل القوانين المختلفة", "correct": false }
+        ],
+        "correctAnswer": { "text": "البحث عن القاعدة الأنسب للتطبيق" }
+    },
+    {
+        "question": "كيف يمكن أن تؤثر القوانين العامة على تنازع القوانين؟",
+        "answers": [
+            { "text": "لا تؤثر مطلقاً", "correct": false },
+            { "text": "قد تؤثر في بعض الحالات", "correct": true },
+            { "text": "تؤثر بشكل دائم", "correct": false },
+            { "text": "تؤثر سلباً فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "قد تؤثر في بعض الحالات" }
+    }
+        ];
+
+        questions.sort(() => Math.random() - 0.5);
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = questions[currentQuestionIndex];
+            const questionElement = document.createElement('div');
+            questionElement.classList.add('question');
+            questionElement.innerText = currentQuestion.question;
+            questionContainer.appendChild(questionElement);
+
+            currentQuestion.answers.sort(() => Math.random() - 0.5);
+
+            currentQuestion.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.innerText = answer.text;
+                button.classList.add('answer');
+                button.addEventListener('click', () => selectAnswer(answer));
+                questionContainer.appendChild(button);
+            });
+
+            questionCountDisplay.innerText = `السؤال ${currentQuestionIndex + 1} من ${questions.length}`;
+        }
+
+        function resetState() {
+            nextButton.style.display = 'none';
+            questionContainer.innerHTML = '';
+        }
+
+        function selectAnswer(answer) {
+            const currentQuestion = questions[currentQuestionIndex];
+
+            const buttons = document.querySelectorAll('.answer');
+            buttons.forEach(button => {
+                button.disabled = true; // تعطيل الأزرار بعد الاختيار
+            });
+
+            if (answer.correct) {
+                score++;
+                scoreDisplay.innerText = `نتيجة: ${score}`;
+            } else {
+                wrongAnswers.push(currentQuestion);
+            }
+
+            buttons.forEach(button => {
+                if (button.innerText === currentQuestion.correctAnswer.text) {
+                    button.classList.add('correct');
+                } else if (button.innerText === answer.text && !answer.correct) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            nextButton.style.display = 'block';
+        }
+
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        });
+
+        function showResult() {
+            questionContainer.style.display = 'none';
+            nextButton.style.display = 'none';
+            resultContainer.style.display = 'block';
+
+            finalScoreDisplay.innerText = `نتيجتك النهائية: ${score} من ${questions.length}`;
+            resultMessage.innerText = 'انتهى الاختبار!';
+
+            if (wrongAnswers.length > 0) {
+                wrongAnswers.forEach(question => {
+                    const wrongAnswerElement = document.createElement('div');
+                    wrongAnswerElement.classList.add('wrong-answer-question');
+                    wrongAnswerElement.innerHTML = `
+                        <div>${question.question}</div>
+                        <div class="correct-answer">الإجابة الصحيحة: ${question.correctAnswer.text}</div>
+                        <ul>
+                            ${question.answers.map(ans => `<li>${ans.text}</li>`).join('')}
+                        </ul>
+                    `;
+                    wrongAnswersContainer.appendChild(wrongAnswerElement);
+                });
+            } else {
+                wrongAnswersContainer.innerHTML = '<div>لا توجد إجابات خاطئة!</div>';
+            }
+        }
+
+        showQuestion();
+    </script>
+</body>
+</html>

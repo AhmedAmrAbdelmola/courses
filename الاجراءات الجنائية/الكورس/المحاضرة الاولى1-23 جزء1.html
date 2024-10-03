@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الأسئلة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* منع التمرير العمودي في الجسم */
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex-grow: 1; /* يسمح للحاوية بالنمو لملء المساحة المتاحة */
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* يسمح بالتمرير داخل الحاوية */
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .score {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .question-container {
+            margin-bottom: 20px;
+        }
+
+        .question {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        .answer {
+            display: block;
+            margin: 10px auto;
+            padding: 15px;
+            font-size: 1.2em;
+            background: #e7e7e7;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 80%;
+        }
+
+        .correct {
+            background-color: green;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: red;
+            color: white;
+        }
+
+        .next-button {
+            font-size: 1.5em;
+            background-color: yellow;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            border: 2px solid #ccc;
+        }
+
+        .result-container {
+            display: none;
+        }
+
+        .result-message {
+            font-size: 2em;
+        }
+
+        .final-score {
+            font-size: 1.5em;
+        }
+
+        .wrong-answer-container {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .wrong-answer-question {
+            background-color: #ffe6e6;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 80%;
+            max-width: 400px;
+            border: 1px solid red;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .wrong-answer-question .correct-answer {
+            color: green;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>اختبار الأسئلة</h1>
+        <div id="score" class="score">نتيجة: 0</div>
+        <div id="question-count" class="question-count"></div>
+        <div id="question-container" class="question-container"></div>
+        <button id="next-button" class="next-button" style="display:none;">السؤال التالي</button>
+        <div id="result-container" class="result-container">
+            <div id="result-message" class="result-message"></div>
+            <div id="final-score" class="final-score"></div>
+            <div id="wrong-answers" class="wrong-answer-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const questionContainer = document.getElementById('question-container');
+        const scoreDisplay = document.getElementById('score');
+        const nextButton = document.getElementById('next-button');
+        const questionCountDisplay = document.getElementById('question-count');
+        const resultContainer = document.getElementById('result-container');
+        const resultMessage = document.getElementById('result-message');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const wrongAnswersContainer = document.getElementById('wrong-answers');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let wrongAnswers = [];
+        let questions = [
+        {
+        "question": "ما هو النظام الذي يعتبر خصومة عادية بين طرفين متكافئين؟",
+        "answers": [
+            { "text": "النظام الاتهامي", "correct": true },
+            { "text": "النظام التنقيبي", "correct": false },
+            { "text": "النظام المختلط", "correct": false }
+        ],
+        "correctAnswer": { "text": "النظام الاتهامي" }
+    },
+    {
+        "question": "في أي نظام تكون الإجراءات شفهية وعامة؟",
+        "answers": [
+            { "text": "النظام المختلط", "correct": false },
+            { "text": "النظام التنقيبي", "correct": false },
+            { "text": "النظام الاتهامي", "correct": true }
+        ],
+        "correctAnswer": { "text": "النظام الاتهامي" }
+    },
+    {
+        "question": "من يحق له إثارة الدعوى العمومية في النظام التنقيبي؟",
+        "answers": [
+            { "text": "المتهم", "correct": false },
+            { "text": "المدعي", "correct": false },
+            { "text": "النيابة العامة", "correct": true }
+        ],
+        "correctAnswer": { "text": "النيابة العامة" }
+    },
+    {
+        "question": "أي من الأنظمة يهدف إلى حماية حقوق المتهم؟",
+        "answers": [
+            { "text": "النظام التنقيبي", "correct": false },
+            { "text": "النظام المختلط", "correct": false },
+            { "text": "النظام الاتهامي", "correct": true }
+        ],
+        "correctAnswer": { "text": "النظام الاتهامي" }
+    },
+    {
+        "question": "ما هو الفرق الرئيسي بين النظام التنقيبي والاتهامي؟",
+        "answers": [
+            { "text": "وجود قاضي", "correct": false },
+            { "text": "دور النيابة العامة", "correct": true },
+            { "text": "نوع الأدلة", "correct": false }
+        ],
+        "correctAnswer": { "text": "دور النيابة العامة" }
+    },
+    {
+        "question": "ما هو دور القاضي في النظام الاتهامي؟",
+        "answers": [
+            { "text": "جمع الأدلة", "correct": false },
+            { "text": "الحكم بناءً على الحوارات", "correct": true },
+            { "text": "توجيه الاتهامات", "correct": false }
+        ],
+        "correctAnswer": { "text": "الحكم بناءً على الحوارات" }
+    },
+    {
+        "question": "ما هي خاصية النظام المختلط التي اقتبسها من النظام التنقيبي؟",
+        "answers": [
+            { "text": "الشفافية في المحاكمة", "correct": false },
+            { "text": "الكتابة والسرية في مرحلة التحقيق", "correct": true },
+            { "text": "الحقوق المتساوية للخصوم", "correct": false }
+        ],
+        "correctAnswer": { "text": "الكتابة والسرية في مرحلة التحقيق" }
+    },
+    {
+        "question": "ماذا يحدث إذا لم يقدم المدعي دليل على دعواه في النظام الاتهامي؟",
+        "answers": [
+            { "text": "يتم الحكم لصالح المدعي", "correct": false },
+            { "text": "يتم الحكم بالبراءة", "correct": true },
+            { "text": "يتم إغلاق القضية", "correct": false }
+        ],
+        "correctAnswer": { "text": "يتم الحكم بالبراءة" }
+    },
+    {
+        "question": "أي من الأنظمة يتيح للمدعي تقديم الأدلة بشكل أكبر؟",
+        "answers": [
+            { "text": "النظام الاتهامي", "correct": true },
+            { "text": "النظام التنقيبي", "correct": false },
+            { "text": "النظام المختلط", "correct": false }
+        ],
+        "correctAnswer": { "text": "النظام الاتهامي" }
+    },
+    {
+        "question": "ما هو الهدف من مرحلة جمع الاستدلالات؟",
+        "answers": [
+            { "text": "الحكم على القضية", "correct": false },
+            { "text": "جمع الأدلة اللازمة", "correct": true },
+            { "text": "تقديم الشهادات", "correct": false }
+        ],
+        "correctAnswer": { "text": "جمع الأدلة اللازمة" }
+    },
+    {
+        "question": "ما هو المبدأ الذي يخل به النظام التنقيبي؟",
+        "answers": [
+            { "text": "مبدأ السرية", "correct": false },
+            { "text": "مبدأ المساواة", "correct": true },
+            { "text": "مبدأ الشفافية", "correct": false }
+        ],
+        "correctAnswer": { "text": "مبدأ المساواة" }
+    },
+    {
+        "question": "أي من القوانين يرتبط ارتباطًا وثيقًا بقانون الإجراءات الجنائية؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": true },
+            { "text": "قانون المرافعات", "correct": false },
+            { "text": "قانون الطوارئ", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون العقوبات" }
+    },
+    {
+        "question": "ما هي الخصائص التي تشترك فيها قوانين الإجراءات الجنائية والمرافعات؟",
+        "answers": [
+            { "text": "نوع الجريمة", "correct": false },
+            { "text": "المبادئ التي تحكم سير الدعوى", "correct": true },
+            { "text": "العقوبات", "correct": false }
+        ],
+        "correctAnswer": { "text": "المبادئ التي تحكم سير الدعوى" }
+    },
+    {
+        "question": "ما هو دور مأمور الضبط القضائي في مرحلة جمع الاستدلالات؟",
+        "answers": [
+            { "text": "الحكم في القضية", "correct": false },
+            { "text": "جمع الأدلة", "correct": true },
+            { "text": "تقديم الشهادات", "correct": false }
+        ],
+        "correctAnswer": { "text": "جمع الأدلة" }
+    },
+    {
+        "question": "أي من الأنظمة يعتبر الأكثر شيوعًا في العالم؟",
+        "answers": [
+            { "text": "النظام الاتهامي", "correct": false },
+            { "text": "النظام التنقيبي", "correct": false },
+            { "text": "النظام المختلط", "correct": true }
+        ],
+        "correctAnswer": { "text": "النظام المختلط" }
+    },
+    {
+        "question": "ما هو النص الذي يحدد المحكمة المختصة بإلغاء وقف التنفيذ؟",
+        "answers": [
+            { "text": "المادة 482", "correct": false },
+            { "text": "المادة 75", "correct": true },
+            { "text": "المادة 428", "correct": false }
+        ],
+        "correctAnswer": { "text": "المادة 75" }
+    },
+    {
+        "question": "ما هو المبدأ الذي يضمن حقوق الدفاع في النظام المختلط؟",
+        "answers": [
+            { "text": "مبدأ الشفافية", "correct": false },
+            { "text": "مبدأ الاستقلالية", "correct": true },
+            { "text": "مبدأ السرية", "correct": false }
+        ],
+        "correctAnswer": { "text": "مبدأ الاستقلالية" }
+    },
+    {
+        "question": "ما هو الهدف من قانون الطوارئ؟",
+        "answers": [
+            { "text": "تقليل سلطات النيابة العامة", "correct": false },
+            { "text": "تنظيم الإجراءات الاستثنائية", "correct": true },
+            { "text": "حماية حقوق المتهم", "correct": false }
+        ],
+        "correctAnswer": { "text": "تنظيم الإجراءات الاستثنائية" }
+    },
+    {
+        "question": "ما هي العلاقة بين قانون العقوبات وقانون الإجراءات الجنائية؟",
+        "answers": [
+            { "text": "لا علاقة بينهما", "correct": false },
+            { "text": "الإجراءات الجنائية تنظم تنفيذ العقوبات", "correct": true },
+            { "text": "العقوبات تحدد الإجراءات الجنائية", "correct": false }
+        ],
+        "correctAnswer": { "text": "الإجراءات الجنائية تنظم تنفيذ العقوبات" }
+    },
+    {
+        "question": "ما هو الهدف الرئيسي للنظام التنقيبي؟",
+        "answers": [
+            { "text": "حماية المتهم", "correct": false },
+            { "text": "جمع الأدلة بطريقة سرية", "correct": true },
+            { "text": "تحقيق العدالة", "correct": false }
+        ],
+        "correctAnswer": { "text": "جمع الأدلة بطريقة سرية" }
+    },
+    {
+        "question": "ما هي الخصائص التي تميز النظام الاتهامي؟",
+        "answers": [
+            { "text": "السرية", "correct": false },
+            { "text": "الطابع العلني", "correct": true },
+            { "text": "التوثيق الكتابي", "correct": false }
+        ],
+        "correctAnswer": { "text": "الطابع العلني" }
+    },
+    {
+        "question": "ماذا يعني مبدأ الاستقلالية في النظام المختلط؟",
+        "answers": [
+            { "text": "عدم تدخل النيابة في التحقيق", "correct": false },
+            { "text": "استقلال القاضي عن الأطراف", "correct": true },
+            { "text": "عدم وجود قضاة", "correct": false }
+        ],
+        "correctAnswer": { "text": "استقلال القاضي عن الأطراف" }
+    },
+    {
+        "question": "أي من الأنظمة يتيح للخصوم التنازل عن القضية؟",
+        "answers": [
+            { "text": "النظام الاتهامي", "correct": false },
+            { "text": "النظام التنقيبي", "correct": false },
+            { "text": "لا يتيح أي نظام", "correct": true }
+        ],
+        "correctAnswer": { "text": "لا يتيح أي نظام" }
+    },
+    {
+        "question": "ما هو النص القانوني الذي ينظم حقوق الدفاع؟",
+        "answers": [
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون المرافعات", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هو الغرض من مرحلة التحقيق الابتدائي؟",
+        "answers": [
+            { "text": "تقديم الأدلة", "correct": false },
+            { "text": "جمع المعلومات", "correct": true },
+            { "text": "الحكم النهائي", "correct": false }
+        ],
+        "correctAnswer": { "text": "جمع المعلومات" }
+    },
+    {
+        "question": "ما هي الجريمة التي تنظمها المادة 482 من قانون الإجراءات الجنائية؟",
+        "answers": [
+            { "text": "جريمة الشهادة الزور", "correct": false },
+            { "text": "جريمة التزوير", "correct": false },
+            { "text": "جريمة الامتناع عن أداء اليمين", "correct": true }
+        ],
+        "correctAnswer": { "text": "جريمة الامتناع عن أداء اليمين" }
+    },
+    {
+        "question": "ما هي الظروف التي يجب أن تتواجد لإعلان حالة الطوارئ؟",
+        "answers": [
+            { "text": "قرار فردي من الرئيس", "correct": false },
+            { "text": "سبب يحدده القانون", "correct": true },
+            { "text": "موافقة مجلس النواب فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "سبب يحدده القانون" }
+    },
+    {
+        "question": "ما الذي يميز النظام المختلط عن النظامين الآخرين؟",
+        "answers": [
+            { "text": "عدم وجود قاضي", "correct": false },
+            { "text": "الجمع بين إجراءات شفاهية وسرية", "correct": true },
+            { "text": "اعتماد كامل على النيابة العامة", "correct": false }
+        ],
+        "correctAnswer": { "text": "الجمع بين إجراءات شفاهية وسرية" }
+    },
+    {
+        "question": "من هم المعنيون بجمع الاستدلالات في المرحلة الأولى؟",
+        "answers": [
+            { "text": "القضاة", "correct": false },
+            { "text": "النيابة العامة", "correct": false },
+            { "text": "مأمور الضبط القضائي", "correct": true }
+        ],
+        "correctAnswer": { "text": "مأمور الضبط القضائي" }
+    },
+    {
+        "question": "ما هي المرحلة التي تسبق تحريك الدعوى الجنائية؟",
+        "answers": [
+            { "text": "مرحلة المحاكمة", "correct": false },
+            { "text": "مرحلة جمع الاستدلالات", "correct": true },
+            { "text": "مرحلة التحقيق الابتدائي", "correct": false }
+        ],
+        "correctAnswer": { "text": "مرحلة جمع الاستدلالات" }
+    },
+    {
+        "question": "ما هو النص الذي يحدد الإجراءات الواجب اتباعها عند إعلان حالة الطوارئ؟",
+        "answers": [
+            { "text": "الدستور", "correct": false },
+            { "text": "قانون الطوارئ", "correct": true },
+            { "text": "قانون العقوبات", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الطوارئ" }
+    },
+    {
+        "question": "ما هو المبدأ الذي يجب أن يلتزم به مأمور الضبط عند جمع الاستدلالات؟",
+        "answers": [
+            { "text": "المشروعية", "correct": true },
+            { "text": "السرية", "correct": false },
+            { "text": "الشفافية", "correct": false }
+        ],
+        "correctAnswer": { "text": "المشروعية" }
+    },
+    {
+        "question": "ما هو دور النيابة العامة في النظام التنقيبي؟",
+        "answers": [
+            { "text": "تقديم الأدلة", "correct": false },
+            { "text": "جمع الأدلة", "correct": false },
+            { "text": "تقديم الاتهام", "correct": true }
+        ],
+        "correctAnswer": { "text": "تقديم الاتهام" }
+    },
+    {
+        "question": "ما هو الهدف من قانون الإجراءات الجنائية؟",
+        "answers": [
+            { "text": "حماية حقوق الضحايا", "correct": false },
+            { "text": "تنظيم سير الدعوى الجنائية", "correct": true },
+            { "text": "تقليل العقوبات", "correct": false }
+        ],
+        "correctAnswer": { "text": "تنظيم سير الدعوى الجنائية" }
+    },
+    {
+        "question": "ما هو المعنى الدقيق لمبدأ جدية الاستدلالات؟",
+        "answers": [
+            { "text": "جمع المعلومات بشكل عشوائي", "correct": false },
+            { "text": "جمع المعلومات بطرق غير قانونية", "correct": false },
+            { "text": "جمع معلومات تسمح باتخاذ إجراء قانوني", "correct": true }
+        ],
+        "correctAnswer": { "text": "جمع معلومات تسمح باتخاذ إجراء قانوني" }
+    },
+    {
+        "question": "أي من الأنظمة يتيح تحقيقًا علنيًا؟",
+        "answers": [
+            { "text": "النظام التنقيبي", "correct": false },
+            { "text": "النظام المختلط", "correct": false },
+            { "text": "النظام الاتهامي", "correct": true }
+        ],
+        "correctAnswer": { "text": "النظام الاتهامي" }
+    },
+    {
+        "question": "ما هي الجريمة التي تخص قانون الإجراءات الجنائية؟",
+        "answers": [
+            { "text": "الجريمة المالية", "correct": false },
+            { "text": "الجريمة الجنائية", "correct": true },
+            { "text": "الجريمة الإدارية", "correct": false }
+        ],
+        "correctAnswer": { "text": "الجريمة الجنائية" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم الإعلانات القضائية؟",
+        "answers": [
+            { "text": "المادة 1/432", "correct": false },
+            { "text": "المادة 1/428", "correct": true },
+            { "text": "المادة 333", "correct": false }
+        ],
+        "correctAnswer": { "text": "المادة 1/428" }
+    },
+    {
+        "question": "ما هو الهدف من مرحلة التحقيق النهائي؟",
+        "answers": [
+            { "text": "جمع الأدلة", "correct": false },
+            { "text": "إصدار الحكم", "correct": true },
+            { "text": "تقديم الشهادات", "correct": false }
+        ],
+        "correctAnswer": { "text": "إصدار الحكم" }
+    },
+    {
+        "question": "من هو المسؤول عن إصدار قرار الطوارئ؟",
+        "answers": [
+            { "text": "وزير الداخلية", "correct": false },
+            { "text": "رئيس الجمهورية", "correct": true },
+            { "text": "مجلس النواب", "correct": false }
+        ],
+        "correctAnswer": { "text": "رئيس الجمهورية" }
+    },
+    {
+        "question": "ما هو الفرق بين القانون الجنائي والقانون المدني؟",
+        "answers": [
+            { "text": "نوع العقوبات", "correct": false },
+            { "text": "نوع الجريمة", "correct": false },
+            { "text": "المصلحة المحمية", "correct": true }
+        ],
+        "correctAnswer": { "text": "المصلحة المحمية" }
+    },
+    {
+        "question": "ما هي العناصر الأساسية لمرحلة جمع الاستدلالات؟",
+        "answers": [
+            { "text": "الشفافية والسرية", "correct": false },
+            { "text": "المشروعية والجدية", "correct": true },
+            { "text": "السرية والعلنية", "correct": false }
+        ],
+        "correctAnswer": { "text": "المشروعية والجدية" }
+    },
+    {
+        "question": "ما هو النص الذي يحدد حقوق المتهم في النظام المختلط؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون الطوارئ", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هو الدور الذي يلعبه القاضي في النظام الجنائي؟",
+        "answers": [
+            { "text": "دور سلبي", "correct": false },
+            { "text": "دور إيجابي", "correct": true },
+            { "text": "لا دور له", "correct": false }
+        ],
+        "correctAnswer": { "text": "دور إيجابي" }
+    },
+    {
+        "question": "أي من الأنظمة يتطلب حضور الأطراف في المحاكمة؟",
+        "answers": [
+            { "text": "النظام الاتهامي", "correct": true },
+            { "text": "النظام التنقيبي", "correct": false },
+            { "text": "النظام المختلط", "correct": false }
+        ],
+        "correctAnswer": { "text": "النظام الاتهامي" }
+    },
+    {
+        "question": "ما هي مدة إعلان حالة الطوارئ حسب الدستور؟",
+        "answers": [
+            { "text": "شهر", "correct": false },
+            { "text": "ثلاثة أشهر", "correct": true },
+            { "text": "ستة أشهر", "correct": false }
+        ],
+        "correctAnswer": { "text": "ثلاثة أشهر" }
+    },
+    {
+        "question": "ما هو النص القانوني الذي ينظم إجراءات الاستدلال؟",
+        "answers": [
+            { "text": "قانون الطوارئ", "correct": false },
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "كيف يتم تقييم جدية الأدلة في مرحلة التحقيق؟",
+        "answers": [
+            { "text": "بناءً على النتائج فقط", "correct": false },
+            { "text": "بناءً على المقدمات والمعلومات", "correct": true },
+            { "text": "بناءً على رأي القاضي", "correct": false }
+        ],
+        "correctAnswer": { "text": "بناءً على المقدمات والمعلومات" }
+    },
+    {
+        "question": "ما هو الهدف من وجود النيابة العامة في النظام الجنائي؟",
+        "answers": [
+            { "text": "حماية المتهم", "correct": false },
+            { "text": "تحقيق العدالة", "correct": true },
+            { "text": "تقديم الأدلة", "correct": false }
+        ],
+        "correctAnswer": { "text": "تحقيق العدالة" }
+    },
+    {
+        "question": "ما هو المبدأ الذي يضمن حقوق الدفاع في النظام الاتهامي؟",
+        "answers": [
+            { "text": "مبدأ السرية", "correct": false },
+            { "text": "مبدأ العلانية", "correct": true },
+            { "text": "مبدأ الاستقلالية", "correct": false }
+        ],
+        "correctAnswer": { "text": "مبدأ العلانية" }
+    },
+    {
+        "question": "ما هي الإجراءات الواجب اتباعها عند القبض على شخص في حالة تلبس؟",
+        "answers": [
+            { "text": "تقديم الشهادة", "correct": false },
+            { "text": "جمع الأدلة", "correct": false },
+            { "text": "تنفيذ القبض دون إذن", "correct": true }
+        ],
+        "correctAnswer": { "text": "تنفيذ القبض دون إذن" }
+    },
+    {
+        "question": "ما هي أهمية توثيق الاستدلالات؟",
+        "answers": [
+            { "text": "لتقديمها كأدلة في المحكمة", "correct": true },
+            { "text": "لتسريع الإجراءات", "correct": false },
+            { "text": "لا أهمية لها", "correct": false }
+        ],
+        "correctAnswer": { "text": "لتقديمها كأدلة في المحكمة" }
+    },
+    {
+        "question": "أي من الأنظمة يفضل السرية في مرحلة التحقيق؟",
+        "answers": [
+            { "text": "النظام المختلط", "correct": false },
+            { "text": "النظام الاتهامي", "correct": false },
+            { "text": "النظام التنقيبي", "correct": true }
+        ],
+        "correctAnswer": { "text": "النظام التنقيبي" }
+    },
+    {
+        "question": "ما هو النص القانوني الذي ينظم حق الاستئناف؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون الطوارئ", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هي العقوبة التي تنص عليها المادة 75 من قانون العقوبات؟",
+        "answers": [
+            { "text": "الحبس المؤبد", "correct": false },
+            { "text": "الإعدام", "correct": false },
+            { "text": "إلغاء وقف التنفيذ", "correct": true }
+        ],
+        "correctAnswer": { "text": "إلغاء وقف التنفيذ" }
+    },
+    {
+        "question": "ما هو المبدأ الذي يجب أن يلتزم به القاضي في النظام الجنائي؟",
+        "answers": [
+            { "text": "الحياد", "correct": true },
+            { "text": "السرية", "correct": false },
+            { "text": "العلنية", "correct": false }
+        ],
+        "correctAnswer": { "text": "الحياد" }
+    },
+    {
+        "question": "ما هو الهدف من إجراءات الطعن في الأحكام؟",
+        "answers": [
+            { "text": "حماية القاضي", "correct": false },
+            { "text": "تحقيق العدالة", "correct": true },
+            { "text": "تحسين الإجراءات", "correct": false }
+        ],
+        "correctAnswer": { "text": "تحقيق العدالة" }
+    },
+    {
+        "question": "ما هي الفئات التي يحق لها تقديم الشكاوى في النظام الجنائي؟",
+        "answers": [
+            { "text": "فقط الضحايا", "correct": false },
+            { "text": "أي شخص لديه دليل", "correct": true },
+            { "text": "النيابة العامة فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "أي شخص لديه دليل" }
+    },
+    {
+        "question": "ما هي السلطة التي يمكنها إلغاء حالة الطوارئ؟",
+        "answers": [
+            { "text": "مجلس الوزراء", "correct": false },
+            { "text": "رئيس الجمهورية", "correct": false },
+            { "text": "مجلس النواب", "correct": true }
+        ],
+        "correctAnswer": { "text": "مجلس النواب" }
+    }
+        ];
+
+        questions.sort(() => Math.random() - 0.5);
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = questions[currentQuestionIndex];
+            const questionElement = document.createElement('div');
+            questionElement.classList.add('question');
+            questionElement.innerText = currentQuestion.question;
+            questionContainer.appendChild(questionElement);
+
+            currentQuestion.answers.sort(() => Math.random() - 0.5);
+
+            currentQuestion.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.innerText = answer.text;
+                button.classList.add('answer');
+                button.addEventListener('click', () => selectAnswer(answer));
+                questionContainer.appendChild(button);
+            });
+
+            questionCountDisplay.innerText = `السؤال ${currentQuestionIndex + 1} من ${questions.length}`;
+        }
+
+        function resetState() {
+            nextButton.style.display = 'none';
+            questionContainer.innerHTML = '';
+        }
+
+        function selectAnswer(answer) {
+            const currentQuestion = questions[currentQuestionIndex];
+
+            const buttons = document.querySelectorAll('.answer');
+            buttons.forEach(button => {
+                button.disabled = true; // تعطيل الأزرار بعد الاختيار
+            });
+
+            if (answer.correct) {
+                score++;
+                scoreDisplay.innerText = `نتيجة: ${score}`;
+            } else {
+                wrongAnswers.push(currentQuestion);
+            }
+
+            buttons.forEach(button => {
+                if (button.innerText === currentQuestion.correctAnswer.text) {
+                    button.classList.add('correct');
+                } else if (button.innerText === answer.text && !answer.correct) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            nextButton.style.display = 'block';
+        }
+
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        });
+
+        function showResult() {
+            questionContainer.style.display = 'none';
+            nextButton.style.display = 'none';
+            resultContainer.style.display = 'block';
+
+            finalScoreDisplay.innerText = `نتيجتك النهائية: ${score} من ${questions.length}`;
+            resultMessage.innerText = 'انتهى الاختبار!';
+
+            if (wrongAnswers.length > 0) {
+                wrongAnswers.forEach(question => {
+                    const wrongAnswerElement = document.createElement('div');
+                    wrongAnswerElement.classList.add('wrong-answer-question');
+                    wrongAnswerElement.innerHTML = `
+                        <div>${question.question}</div>
+                        <div class="correct-answer">الإجابة الصحيحة: ${question.correctAnswer.text}</div>
+                        <ul>
+                            ${question.answers.map(ans => `<li>${ans.text}</li>`).join('')}
+                        </ul>
+                    `;
+                    wrongAnswersContainer.appendChild(wrongAnswerElement);
+                });
+            } else {
+                wrongAnswersContainer.innerHTML = '<div>لا توجد إجابات خاطئة!</div>';
+            }
+        }
+
+        showQuestion();
+    </script>
+</body>
+</html>

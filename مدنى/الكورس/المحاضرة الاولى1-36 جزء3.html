@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الأسئلة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* منع التمرير العمودي في الجسم */
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex-grow: 1; /* يسمح للحاوية بالنمو لملء المساحة المتاحة */
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* يسمح بالتمرير داخل الحاوية */
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .score {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .question-container {
+            margin-bottom: 20px;
+        }
+
+        .question {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        .answer {
+            display: block;
+            margin: 10px auto;
+            padding: 15px;
+            font-size: 1.2em;
+            background: #e7e7e7;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 80%;
+        }
+
+        .correct {
+            background-color: green;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: red;
+            color: white;
+        }
+
+        .next-button {
+            font-size: 1.5em;
+            background-color: yellow;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            border: 2px solid #ccc;
+        }
+
+        .result-container {
+            display: none;
+        }
+
+        .result-message {
+            font-size: 2em;
+        }
+
+        .final-score {
+            font-size: 1.5em;
+        }
+
+        .wrong-answer-container {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .wrong-answer-question {
+            background-color: #ffe6e6;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 80%;
+            max-width: 400px;
+            border: 1px solid red;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .wrong-answer-question .correct-answer {
+            color: green;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>اختبار الأسئلة</h1>
+        <div id="score" class="score">نتيجة: 0</div>
+        <div id="question-count" class="question-count"></div>
+        <div id="question-container" class="question-container"></div>
+        <button id="next-button" class="next-button" style="display:none;">السؤال التالي</button>
+        <div id="result-container" class="result-container">
+            <div id="result-message" class="result-message"></div>
+            <div id="final-score" class="final-score"></div>
+            <div id="wrong-answers" class="wrong-answer-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const questionContainer = document.getElementById('question-container');
+        const scoreDisplay = document.getElementById('score');
+        const nextButton = document.getElementById('next-button');
+        const questionCountDisplay = document.getElementById('question-count');
+        const resultContainer = document.getElementById('result-container');
+        const resultMessage = document.getElementById('result-message');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const wrongAnswersContainer = document.getElementById('wrong-answers');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let wrongAnswers = [];
+        let questions = [
+        {
+        "question": "ما هو الحق العيني الذي يتيح لصاحبه استخدام الشيء واستغلاله؟",
+        "answers": [
+            { "text": "حق الملكية", "correct": true },
+            { "text": "حق الانتفاع", "correct": false },
+            { "text": "حق الرهن", "correct": false },
+            { "text": "حق الاستئجار", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق الملكية" }
+    },
+    {
+        "question": "أي من الحقوق التالية يعتبر حقاً شخصياً؟",
+        "answers": [
+            { "text": "حق الملكية", "correct": false },
+            { "text": "حق الانتفاع", "correct": false },
+            { "text": "الحق في الحصول على قرض", "correct": true },
+            { "text": "حق الرهن", "correct": false }
+        ],
+        "correctAnswer": { "text": "الحق في الحصول على قرض" }
+    },
+    {
+        "question": "ما هو المقصود بالحق العيني المطلق؟",
+        "answers": [
+            { "text": "حق له مفعول في مواجهة الجميع", "correct": true },
+            { "text": "حق يقتصر على شخص واحد", "correct": false },
+            { "text": "حق مؤقت", "correct": false },
+            { "text": "حق غير قابل للتنازل", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق له مفعول في مواجهة الجميع" }
+    },
+    {
+        "question": "ما هي إحدى خصائص الحقوق الشخصية؟",
+        "answers": [
+            { "text": "مطلقة", "correct": false },
+            { "text": "نسبية", "correct": true },
+            { "text": "دائمة", "correct": false },
+            { "text": "عينية", "correct": false }
+        ],
+        "correctAnswer": { "text": "نسبية" }
+    },
+    {
+        "question": "ما هو الهدف من القانون في حماية حق الملكية؟",
+        "answers": [
+            { "text": "تعزيز المساواة", "correct": false },
+            { "text": "حماية حقوق الأفراد", "correct": true },
+            { "text": "تقليل التنافس", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "حماية حقوق الأفراد" }
+    },
+    {
+        "question": "ما هو أثر عدم استخدام حق الملكية لفترة طويلة؟",
+        "answers": [
+            { "text": "لا يؤثر", "correct": false },
+            { "text": "يمكن أن يؤدي إلى فقدان الحق", "correct": true },
+            { "text": "يزيد من قيمته", "correct": false },
+            { "text": "يتطلب تجديد الحق", "correct": false }
+        ],
+        "correctAnswer": { "text": "يمكن أن يؤدي إلى فقدان الحق" }
+    },
+    {
+        "question": "ما هي قيود حق الملكية؟",
+        "answers": [
+            { "text": "لا توجد قيود", "correct": false },
+            { "text": "قيود قانونية واجتماعية", "correct": true },
+            { "text": "قيود شخصية فقط", "correct": false },
+            { "text": "قيود مالية فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "قيود قانونية واجتماعية" }
+    },
+    {
+        "question": "ما هو الفرق بين الملكية الشائعة والملكية المفرزة؟",
+        "answers": [
+            { "text": "الملكية الشائعة تتعلق بشخص واحد", "correct": false },
+            { "text": "الملكية المفرزة تتعلق بعدة أشخاص", "correct": false },
+            { "text": "الملكية الشائعة تتطلب موافقة الجميع", "correct": true },
+            { "text": "لا يوجد فرق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الملكية الشائعة تتطلب موافقة الجميع" }
+    },
+    {
+        "question": "ما هي أنواع الثمار في الملكية؟",
+        "answers": [
+            { "text": "طبيعية وصناعية", "correct": false },
+            { "text": "مالية وعينية", "correct": false },
+            { "text": "مباشرة وغير مباشرة", "correct": false },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يمكن للمالك استغلال حقه في الملكية؟",
+        "answers": [
+            { "text": "من خلال البيع", "correct": false },
+            { "text": "عن طريق التأجير", "correct": false },
+            { "text": "عبر الاستخدام الشخصي", "correct": false },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "كيف يتم تحديد حدود الملكية في القانون؟",
+        "answers": [
+            { "text": "وفقاً للقوانين المحلية", "correct": false },
+            { "text": "حسب اتفاق الملاك", "correct": false },
+            { "text": "وفقاً للممارسات العرفية", "correct": false },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما الذي يميز حق الملكية عن غيره من الحقوق؟",
+        "answers": [
+            { "text": "أنه حق مؤقت", "correct": false },
+            { "text": "أنه حق متجدد", "correct": false },
+            { "text": "أنه حق دائم وشامل", "correct": true },
+            { "text": "أنه حق فردي فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "أنه حق دائم وشامل" }
+    },
+    {
+        "question": "ما هو مفهوم \"حق الاستغلال\" في سياق الملكية؟",
+        "answers": [
+            { "text": "حق استخدام الشيء فقط", "correct": false },
+            { "text": "حق الحصول على المنافع من الشيء", "correct": true },
+            { "text": "حق التصرف في الشيء", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق الحصول على المنافع من الشيء" }
+    },
+    {
+        "question": "ما هو مفهوم \"الملكية العامة\"؟",
+        "answers": [
+            { "text": "ملكية تعود للدولة", "correct": true },
+            { "text": "ملكية تعود للأفراد", "correct": false },
+            { "text": "ملكية مشتركة", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "ملكية تعود للدولة" }
+    },
+    {
+        "question": "ما هو الأثر القانوني لعدم التصرف في الملكية لفترة طويلة؟",
+        "answers": [
+            { "text": "لا يوجد أثر", "correct": false },
+            { "text": "قد يؤدي إلى فقدان الملكية", "correct": true },
+            { "text": "قد يؤدي إلى زيادة قيمتها", "correct": false },
+            { "text": "تتطلب تجديد الملكية", "correct": false }
+        ],
+        "correctAnswer": { "text": "قد يؤدي إلى فقدان الملكية" }
+    },
+    {
+        "question": "ما هو المقصود بـ\"الحق الشخصي\"؟",
+        "answers": [
+            { "text": "حق يتعلق بشخص واحد فقط", "correct": false },
+            { "text": "حق يتعلق بعلاقة بين دائن ومدين", "correct": true },
+            { "text": "حق يتعلق بالملكية العامة", "correct": false },
+            { "text": "حق غير قابل للتصرف", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق يتعلق بعلاقة بين دائن ومدين" }
+    },
+    {
+        "question": "ما هي الخصائص التي يتميز بها حق الملكية؟",
+        "answers": [
+            { "text": "مؤقت", "correct": false },
+            { "text": "دائم", "correct": true },
+            { "text": "غير قابل للنقل", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "دائم" }
+    },
+    {
+        "question": "كيف يتم حماية حق الملكية من الاعتداء؟",
+        "answers": [
+            { "text": "بإبلاغ السلطات", "correct": false },
+            { "text": "من خلال رفع دعوى", "correct": false },
+            { "text": "عن طريق التفاوض", "correct": false },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو الفرق بين الملكية الخاصة والملكية العامة؟",
+        "answers": [
+            { "text": "الملكية العامة تعود للدولة", "correct": true },
+            { "text": "الملكية الخاصة تعود للأفراد", "correct": true },
+            { "text": "الملكية العامة لا يمكن التصرف بها", "correct": false },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو حق الرهن؟",
+        "answers": [
+            { "text": "حق ملكية", "correct": false },
+            { "text": "حق عيني تبعي", "correct": true },
+            { "text": "حق شخصي", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق عيني تبعي" }
+    },
+    {
+        "question": "ما هي الحدود القانونية للملكية؟",
+        "answers": [
+            { "text": "قيود على الحقوق", "correct": true },
+            { "text": "حقوق غير محدودة", "correct": false },
+            { "text": "حقوق تتعلق بالملكية العامة", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "قيود على الحقوق" }
+    },
+    {
+        "question": "كيف يؤثر عدم استخدام حق الملكية على قيمته؟",
+        "answers": [
+            { "text": "يزيد من قيمته", "correct": false },
+            { "text": "لا يؤثر", "correct": false },
+            { "text": "قد يؤدي إلى انخفاض قيمته", "correct": true },
+            { "text": "يتطلب تجديده", "correct": false }
+        ],
+        "correctAnswer": { "text": "قد يؤدي إلى انخفاض قيمته" }
+    },
+    {
+        "question": "ما هو الغرض من القوانين التي تحكم الملكية؟",
+        "answers": [
+            { "text": "حماية حقوق الأفراد", "correct": true },
+            { "text": "تعزيز المنافسة", "correct": false },
+            { "text": "تقليل المسؤولية", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "حماية حقوق الأفراد" }
+    },
+    {
+        "question": "ما هي العناصر الأساسية للملكية؟",
+        "answers": [
+            { "text": "العناصر الثانوية", "correct": false },
+            { "text": "العناصر المادية", "correct": true },
+            { "text": "العناصر القانونية", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "العناصر المادية" }
+    },
+    {
+        "question": "كيف يتم تحديد حقوق الانتفاع؟",
+        "answers": [
+            { "text": "حسب القانون", "correct": false },
+            { "text": "حسب إرادة الملاك", "correct": false },
+            { "text": "حسب العرف", "correct": false },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو مفهوم \"الملكية المشتركة\"؟",
+        "answers": [
+            { "text": "ملكية تعود لشخص واحد", "correct": false },
+            { "text": "ملكية تتعلق بعدة أشخاص", "correct": true },
+            { "text": "ملكية غير محددة", "correct": false },
+            { "text": "ملكية عامة", "correct": false }
+        ],
+        "correctAnswer": { "text": "ملكية تتعلق بعدة أشخاص" }
+    },
+    {
+        "question": "كيف يتم التعامل مع الملكية العامة قانونياً؟",
+        "answers": [
+            { "text": "كملكية خاصة", "correct": false },
+            { "text": "يمنع التصرف فيها", "correct": false },
+            { "text": "يمكن التصرف فيها وفقاً للقوانين", "correct": true },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "يمكن التصرف فيها وفقاً للقوانين" }
+    },
+    {
+        "question": "ما هو أثر انتهاك حق الملكية على المالك؟",
+        "answers": [
+            { "text": "لا يؤثر", "correct": false },
+            { "text": "يمكن أن يؤدي إلى التعويض", "correct": true },
+            { "text": "يسقط الحق", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "يمكن أن يؤدي إلى التعويض" }
+    },
+    {
+        "question": "كيف يتم تحديد حدود الملكية في العقارات؟",
+        "answers": [
+            { "text": "وفقاً للقوانين المحلية", "correct": false },
+            { "text": "حسب اتفاق الملاك", "correct": false },
+            { "text": "وفقاً للممارسات العرفية", "correct": false },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو تعريف \"الملكية الدائمة\"؟",
+        "answers": [
+            { "text": "ملكية تتجدد", "correct": false },
+            { "text": "ملكية مؤقتة", "correct": false },
+            { "text": "ملكية تستمر ما لم يهلك الشيء", "correct": true },
+            { "text": "ملكية غير محددة", "correct": false }
+        ],
+        "correctAnswer": { "text": "ملكية تستمر ما لم يهلك الشيء" }
+    }
+        ];
+
+        questions.sort(() => Math.random() - 0.5);
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = questions[currentQuestionIndex];
+            const questionElement = document.createElement('div');
+            questionElement.classList.add('question');
+            questionElement.innerText = currentQuestion.question;
+            questionContainer.appendChild(questionElement);
+
+            currentQuestion.answers.sort(() => Math.random() - 0.5);
+
+            currentQuestion.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.innerText = answer.text;
+                button.classList.add('answer');
+                button.addEventListener('click', () => selectAnswer(answer));
+                questionContainer.appendChild(button);
+            });
+
+            questionCountDisplay.innerText = `السؤال ${currentQuestionIndex + 1} من ${questions.length}`;
+        }
+
+        function resetState() {
+            nextButton.style.display = 'none';
+            questionContainer.innerHTML = '';
+        }
+
+        function selectAnswer(answer) {
+            const currentQuestion = questions[currentQuestionIndex];
+
+            const buttons = document.querySelectorAll('.answer');
+            buttons.forEach(button => {
+                button.disabled = true; // تعطيل الأزرار بعد الاختيار
+            });
+
+            if (answer.correct) {
+                score++;
+                scoreDisplay.innerText = `نتيجة: ${score}`;
+            } else {
+                wrongAnswers.push(currentQuestion);
+            }
+
+            buttons.forEach(button => {
+                if (button.innerText === currentQuestion.correctAnswer.text) {
+                    button.classList.add('correct');
+                } else if (button.innerText === answer.text && !answer.correct) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            nextButton.style.display = 'block';
+        }
+
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        });
+
+        function showResult() {
+            questionContainer.style.display = 'none';
+            nextButton.style.display = 'none';
+            resultContainer.style.display = 'block';
+
+            finalScoreDisplay.innerText = `نتيجتك النهائية: ${score} من ${questions.length}`;
+            resultMessage.innerText = 'انتهى الاختبار!';
+
+            if (wrongAnswers.length > 0) {
+                wrongAnswers.forEach(question => {
+                    const wrongAnswerElement = document.createElement('div');
+                    wrongAnswerElement.classList.add('wrong-answer-question');
+                    wrongAnswerElement.innerHTML = `
+                        <div>${question.question}</div>
+                        <div class="correct-answer">الإجابة الصحيحة: ${question.correctAnswer.text}</div>
+                        <ul>
+                            ${question.answers.map(ans => `<li>${ans.text}</li>`).join('')}
+                        </ul>
+                    `;
+                    wrongAnswersContainer.appendChild(wrongAnswerElement);
+                });
+            } else {
+                wrongAnswersContainer.innerHTML = '<div>لا توجد إجابات خاطئة!</div>';
+            }
+        }
+
+        showQuestion();
+    </script>
+</body>
+</html>

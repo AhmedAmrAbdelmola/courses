@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الأسئلة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* منع التمرير العمودي في الجسم */
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex-grow: 1; /* يسمح للحاوية بالنمو لملء المساحة المتاحة */
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* يسمح بالتمرير داخل الحاوية */
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .score {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .question-container {
+            margin-bottom: 20px;
+        }
+
+        .question {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        .answer {
+            display: block;
+            margin: 10px auto;
+            padding: 15px;
+            font-size: 1.2em;
+            background: #e7e7e7;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 80%;
+        }
+
+        .correct {
+            background-color: green;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: red;
+            color: white;
+        }
+
+        .next-button {
+            font-size: 1.5em;
+            background-color: yellow;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            border: 2px solid #ccc;
+        }
+
+        .result-container {
+            display: none;
+        }
+
+        .result-message {
+            font-size: 2em;
+        }
+
+        .final-score {
+            font-size: 1.5em;
+        }
+
+        .wrong-answer-container {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .wrong-answer-question {
+            background-color: #ffe6e6;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 80%;
+            max-width: 400px;
+            border: 1px solid red;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .wrong-answer-question .correct-answer {
+            color: green;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>اختبار الأسئلة</h1>
+        <div id="score" class="score">نتيجة: 0</div>
+        <div id="question-count" class="question-count"></div>
+        <div id="question-container" class="question-container"></div>
+        <button id="next-button" class="next-button" style="display:none;">السؤال التالي</button>
+        <div id="result-container" class="result-container">
+            <div id="result-message" class="result-message"></div>
+            <div id="final-score" class="final-score"></div>
+            <div id="wrong-answers" class="wrong-answer-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const questionContainer = document.getElementById('question-container');
+        const scoreDisplay = document.getElementById('score');
+        const nextButton = document.getElementById('next-button');
+        const questionCountDisplay = document.getElementById('question-count');
+        const resultContainer = document.getElementById('result-container');
+        const resultMessage = document.getElementById('result-message');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const wrongAnswersContainer = document.getElementById('wrong-answers');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let wrongAnswers = [];
+        let questions = [
+    {
+        "question": "ما هو الهدف من دراسة تاريخ تنازع القوانين؟",
+        "answers": [
+            { "text": "فهم القوانين الحالية", "correct": false },
+            { "text": "تطوير قوانين جديدة", "correct": false },
+            { "text": "استنتاج المبادئ الأساسية", "correct": false },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو مفهوم \"التحايل على القانون\" في سياق تنازع القوانين؟",
+        "answers": [
+            { "text": "استخدام القانون بطريقة قانونية", "correct": false },
+            { "text": "محاولة الإفلات من تطبيق قانون معين", "correct": true },
+            { "text": "تطبيق جميع القوانين", "correct": false },
+            { "text": "تجاهل القوانين الأجنبية", "correct": false }
+        ],
+        "correctAnswer": { "text": "محاولة الإفلات من تطبيق قانون معين" }
+    },
+    {
+        "question": "ما هو التأثير المحتمل لعدم تطبيق القوانين الأجنبية؟",
+        "answers": [
+            { "text": "زيادة النزاعات", "correct": true },
+            { "text": "تحسين العلاقات الدولية", "correct": false },
+            { "text": "استقرار قانوني", "correct": false },
+            { "text": "تقليل التعقيد", "correct": false }
+        ],
+        "correctAnswer": { "text": "زيادة النزاعات" }
+    },
+    {
+        "question": "ما هي مشكلة \"الإسناد إلى نظام قانوني مركب\"؟",
+        "answers": [
+            { "text": "تعدد القوانين داخل دولة واحدة", "correct": false },
+            { "text": "تحديد أي قانون يطبق عند وجود قوانين متعددة", "correct": true },
+            { "text": "عدم وجود قوانين كافية", "correct": false },
+            { "text": "عدم الاعتراف بالقوانين الأجنبية", "correct": false }
+        ],
+        "correctAnswer": { "text": "تحديد أي قانون يطبق عند وجود قوانين متعددة" }
+    },
+    {
+        "question": "كيف يؤثر عنصر الأشخاص على وصف العلاقة القانونية؟",
+        "answers": [
+            { "text": "يؤدي إلى اعتبارها وطنية", "correct": false },
+            { "text": "يزيد من تعقيدها", "correct": false },
+            { "text": "يؤدي إلى اعتبارها دولية", "correct": true },
+            { "text": "لا يؤثر إطلاقاً", "correct": false }
+        ],
+        "correctAnswer": { "text": "يؤدي إلى اعتبارها دولية" }
+    },
+    {
+        "question": "ما هو المبدأ الذي يتبعه الفقه التقليدي في علاقات القانون العام؟",
+        "answers": [
+            { "text": "تطبيق القوانين الأجنبية", "correct": false },
+            { "text": "تطبيق القوانين المحلية فقط", "correct": true },
+            { "text": "تجاهل القوانين العامة", "correct": false },
+            { "text": "تطبيق جميع القوانين بالتساوي", "correct": false }
+        ],
+        "correctAnswer": { "text": "تطبيق القوانين المحلية فقط" }
+    },
+    {
+        "question": "كيف يمكن أن يؤثر عنصر الموضوع على وصف العلاقة القانونية؟",
+        "answers": [
+            { "text": "يؤدي إلى اعتبارها وطنية", "correct": false },
+            { "text": "يؤدي إلى اعتبارها دولية", "correct": true },
+            { "text": "لا يؤثر على أي شيء", "correct": false },
+            { "text": "يؤدي إلى إلغاء العلاقة", "correct": false }
+        ],
+        "correctAnswer": { "text": "يؤدي إلى اعتبارها دولية" }
+    },
+    {
+        "question": "ما هو مفهوم \"التكييف\" في سياق قواعد تنازع القوانين؟",
+        "answers": [
+            { "text": "تحديد القانون الواجب التطبيق", "correct": false },
+            { "text": "وصف العلاقة القانونية", "correct": true },
+            { "text": "فهم النصوص القانونية", "correct": false },
+            { "text": "تطبيق القوانين المحلية", "correct": false }
+        ],
+        "correctAnswer": { "text": "وصف العلاقة القانونية" }
+    },
+    {
+        "question": "ما هي المرحلة الثانية في تطور قواعد تنازع القوانين؟",
+        "answers": [
+            { "text": "المدرسة الإيطالية القديمة", "correct": false },
+            { "text": "المدرسة الهولندية", "correct": true },
+            { "text": "المدرسة الفرنسية", "correct": false },
+            { "text": "المدرسة الأمريكية", "correct": false }
+        ],
+        "correctAnswer": { "text": "المدرسة الهولندية" }
+    },
+    {
+        "question": "كيف يمكن تصنيف العلاقات التي تدخل تحت نطاق تنازع القوانين؟",
+        "answers": [
+            { "text": "علاقات وطنية فقط", "correct": false },
+            { "text": "علاقات عامة فقط", "correct": false },
+            { "text": "علاقات خاصة ذات طابع دولي", "correct": true },
+            { "text": "علاقات تجارية فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "علاقات خاصة ذات طابع دولي" }
+    },
+    {
+        "question": "ما هو التأثير المحتمل لعدم تطبيق القوانين الأجنبية؟",
+        "answers": [
+            { "text": "زيادة النزاعات", "correct": true },
+            { "text": "تحسين العلاقات الدولية", "correct": false },
+            { "text": "استقرار قانوني", "correct": false },
+            { "text": "تقليل التعقيد", "correct": false }
+        ],
+        "correctAnswer": { "text": "زيادة النزاعات" }
+    },
+    {
+        "question": "ما هو دور القاضي عند مواجهة مشكلة تنازع القوانين؟",
+        "answers": [
+            { "text": "تجاهل القوانين", "correct": false },
+            { "text": "تطبيق القانون الذي يريده", "correct": false },
+            { "text": "البحث عن قاعدة الإسناد المناسبة", "correct": true },
+            { "text": "تطبيق جميع القوانين بالتساوي", "correct": false }
+        ],
+        "correctAnswer": { "text": "البحث عن قاعدة الإسناد المناسبة" }
+    },
+    {
+        "question": "ما هو مفهوم \"الدفع بالنظام العام\" في سياق تطبيق القوانين الأجنبية؟",
+        "answers": [
+            { "text": "تطبيق القوانين الأجنبية دائماً", "correct": false },
+            { "text": "رفض تطبيق القانون الأجنبي المتعارض مع المبادئ الأساسية", "correct": true },
+            { "text": "تطبيق القوانين المحلية فقط", "correct": false },
+            { "text": "عدم وجود نظام قانوني", "correct": false }
+        ],
+        "correctAnswer": { "text": "رفض تطبيق القانون الأجنبي المتعارض مع المبادئ الأساسية" }
+    },
+    {
+        "question": "كيف يمكن أن يؤثر عنصر السبب على العلاقة القانونية؟",
+        "answers": [
+            { "text": "يؤدي إلى اعتبارها وطنية", "correct": false },
+            { "text": "يؤدي إلى اعتبارها دولية", "correct": true },
+            { "text": "لا يؤثر على أي شيء", "correct": false },
+            { "text": "يؤدي إلى إلغاء العلاقة", "correct": false }
+        ],
+        "correctAnswer": { "text": "يؤدي إلى اعتبارها دولية" }
+    },
+    {
+        "question": "ما هي العقبة الثالثة التي تواجه القاضي عند تطبيق قاعدة الإسناد؟",
+        "answers": [
+            { "text": "مشكلة التكييف", "correct": false },
+            { "text": "مشكلة الإحالة", "correct": false },
+            { "text": "الإسناد إلى نظام قانوني مركب", "correct": true },
+            { "text": "مشكلة النظام العام", "correct": false }
+        ],
+        "correctAnswer": { "text": "الإسناد إلى نظام قانوني مركب" }
+    },
+    {
+        "question": "ما هو مفهوم \"الإحالة\" في سياق تنازع القوانين؟",
+        "answers": [
+            { "text": "العودة إلى القانون المحلي", "correct": false },
+            { "text": "الرجوع إلى قانون آخر لحل النزاع", "correct": true },
+            { "text": "تجاهل جميع القوانين", "correct": false },
+            { "text": "تطبيق القوانين التجارية فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "الرجوع إلى قانون آخر لحل النزاع" }
+    },
+    {
+        "question": "ما هو دور القاضي في حالة وجود قوانين متعددة داخل دولة واحدة؟",
+        "answers": [
+            { "text": "تطبيق القانون الأكثر صرامة", "correct": false },
+            { "text": "اختيار القانون الأكثر ملاءمة", "correct": true },
+            { "text": "تجاهل القوانين المختلفة", "correct": false },
+            { "text": "تطبيق جميع القوانين بالتساوي", "correct": false }
+        ],
+        "correctAnswer": { "text": "اختيار القانون الأكثر ملاءمة" }
+    },
+    {
+        "question": "ماذا يعني \"الدفع بالغش نحو القانون\"؟",
+        "answers": [
+            { "text": "محاولة الإفلات من تطبيق قانون معين", "correct": true },
+            { "text": "تطبيق القانون المناسب", "correct": false },
+            { "text": "تجاهل القوانين", "correct": false },
+            { "text": "تطبيق جميع القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "محاولة الإفلات من تطبيق قانون معين" }
+    },
+    {
+        "question": "كيف يمكن أن يؤثر عنصر السبب في تحديد القانون الواجب التطبيق؟",
+        "answers": [
+            { "text": "يؤدي إلى اعتبار العلاقة وطنية", "correct": false },
+            { "text": "يؤدي إلى اعتبار العلاقة دولية", "correct": true },
+            { "text": "لا يؤثر على أي شيء", "correct": false },
+            { "text": "يؤدي إلى إلغاء العلاقة", "correct": false }
+        ],
+        "correctAnswer": { "text": "يؤدي إلى اعتبار العلاقة دولية" }
+    },
+    {
+        "question": "ما هو مفهوم \"القانون الدولي الخاص\"؟",
+        "answers": [
+            { "text": "قانون ينظم العلاقات بين الدول", "correct": false },
+            { "text": "قانون ينظم العلاقات بين الأفراد والدول", "correct": true },
+            { "text": "قانون ينظم العلاقات الداخلية فقط", "correct": false },
+            { "text": "قانون لا علاقة له بالتحكيم", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون ينظم العلاقات بين الأفراد والدول" }
+    },
+    {
+        "question": "ما هو التأثير المحتمل لتطبيق قواعد القانون الدولي الخاص؟",
+        "answers": [
+            { "text": "تعقيد العلاقات القانونية", "correct": false },
+            { "text": "تسهيل تسوية النزاعات", "correct": true },
+            { "text": "تجاهل القوانين الوطنية", "correct": false },
+            { "text": "إلغاء حقوق الأفراد", "correct": false }
+        ],
+        "correctAnswer": { "text": "تسهيل تسوية النزاعات" }
+    },
+    {
+        "question": "ما هو دور القضاء في تعزيز قواعد القانون الدولي الخاص؟",
+        "answers": [
+            { "text": "تجاهل القوانين الدولية", "correct": false },
+            { "text": "تطبيق القوانين الوطنية فقط", "correct": false },
+            { "text": "تعزيز تطبيق القوانين الدولية عند الحاجة", "correct": true },
+            { "text": "تطبيق جميع القوانين بالتساوي", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعزيز تطبيق القوانين الدولية عند الحاجة" }
+    },
+    {
+        "question": "ما هي القواعد التي تحدد القانون الواجب التطبيق في حالة وجود نزاع دولي؟",
+        "answers": [
+            { "text": "قواعد تخص الشخص المدعى عليه", "correct": false },
+            { "text": "قواعد تخص النظام القانوني للدول", "correct": false },
+            { "text": "قواعد الإسناد", "correct": true },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "قواعد الإسناد" }
+    },
+    {
+        "question": "كيف يؤثر مفهوم \"الولاية القضائية\" على تطبيق القوانين؟",
+        "answers": [
+            { "text": "يمنع تطبيق القوانين الأجنبية", "correct": false },
+            { "text": "يحدد أي محكمة لها الحق في النظر في القضية", "correct": true },
+            { "text": "لا يؤثر على أي شيء", "correct": false },
+            { "text": "يؤدي إلى إلغاء القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "يحدد أي محكمة لها الحق في النظر في القضية" }
+    },
+    {
+        "question": "ما هو التأثير المحتمل لعدم وجود قوانين واضحة في العلاقات الدولية؟",
+        "answers": [
+            { "text": "زيادة النزاعات", "correct": true },
+            { "text": "تحسين العلاقات الدولية", "correct": false },
+            { "text": "استقرار قانوني", "correct": false },
+            { "text": "تقليل التعقيد", "correct": false }
+        ],
+        "correctAnswer": { "text": "زيادة النزاعات" }
+    },
+    {
+        "question": "ما هي العقبة الأساسية التي تواجه القاضي عند تطبيق القوانين المختلفة؟",
+        "answers": [
+            { "text": "مشكلة التكييف", "correct": false },
+            { "text": "تعارض القوانين", "correct": true },
+            { "text": "عدم وجود سوابق قانونية", "correct": false },
+            { "text": "عدم وجود قوانين دولية", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعارض القوانين" }
+    },
+    {
+        "question": "كيف يمكن أن يؤثر عنصر المعاملة على العلاقات القانونية؟",
+        "answers": [
+            { "text": "يؤدي إلى تجاهل القوانين", "correct": false },
+            { "text": "يساعد في تحديد القانون الواجب التطبيق", "correct": true },
+            { "text": "يجعل العلاقة أكثر تعقيدًا", "correct": false },
+            { "text": "لا يؤثر على أي شيء", "correct": false }
+        ],
+        "correctAnswer": { "text": "يساعد في تحديد القانون الواجب التطبيق" }
+    },
+    {
+        "question": "ما هو مفهوم \"المعاهدات الدولية\" في القانون؟",
+        "answers": [
+            { "text": "اتفاقات بين الدول لتنظيم العلاقات", "correct": true },
+            { "text": "قوانين محلية", "correct": false },
+            { "text": "قواعد تحكيم", "correct": false },
+            { "text": "قوانين غير ملزمة", "correct": false }
+        ],
+        "correctAnswer": { "text": "اتفاقات بين الدول لتنظيم العلاقات" }
+    },
+    {
+        "question": "كيف تؤثر المعاهدات الدولية على القوانين الوطنية؟",
+        "answers": [
+            { "text": "تلغي جميع القوانين الوطنية", "correct": false },
+            { "text": "تتعارض مع القوانين الوطنية", "correct": false },
+            { "text": "تتكامل مع القوانين الوطنية", "correct": true },
+            { "text": "لا تؤثر على القوانين الوطنية", "correct": false }
+        ],
+        "correctAnswer": { "text": "تتكامل مع القوانين الوطنية" }
+    },
+    {
+        "question": "ما هو مفهوم \"تعارض القوانين\"؟",
+        "answers": [
+            { "text": "وجود قوانين مختلفة تنظم نفس الموضوع", "correct": true },
+            { "text": "عدم وجود أي قوانين", "correct": false },
+            { "text": "تطبيق قانون واحد فقط", "correct": false },
+            { "text": "تجاهل جميع القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "وجود قوانين مختلفة تنظم نفس الموضوع" }
+    },
+    {
+        "question": "كيف تؤثر الاتفاقات الثنائية بين الدول على تنازع القوانين؟",
+        "answers": [
+            { "text": "تزيد من التعقيد", "correct": false },
+            { "text": "تسهل تسوية النزاعات", "correct": true },
+            { "text": "لا تؤثر على أي شيء", "correct": false },
+            { "text": "تؤدي إلى إلغاء القوانين الوطنية", "correct": false }
+        ],
+        "correctAnswer": { "text": "تسهل تسوية النزاعات" }
+    },
+    {
+        "question": "ما هو مفهوم \"التحكيم الدولي\"؟",
+        "answers": [
+            { "text": "حل النزاعات بين الدول بطرق قانونية", "correct": true },
+            { "text": "إجراء محاكمات محلية", "correct": false },
+            { "text": "عدم الاعتراف بالقوانين", "correct": false },
+            { "text": "تطبيق جميع القوانين بالتساوي", "correct": false }
+        ],
+        "correctAnswer": { "text": "حل النزاعات بين الدول بطرق قانونية" }
+    },
+    {
+        "question": "كيف يمكن أن يؤثر التحكيم الدولي على العلاقات القانونية؟",
+        "answers": [
+            { "text": "يزيد من النزاعات", "correct": false },
+            { "text": "يسهل الوصول إلى حلول", "correct": true },
+            { "text": "لا يؤثر على أي شيء", "correct": false },
+            { "text": "يؤدي إلى إلغاء القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "يسهل الوصول إلى حلول" }
+    },
+    {
+        "question": "ما هو التأثير المحتمل لتطبيق القانون الأجنبي في النزاعات الدولية؟",
+        "answers": [
+            { "text": "عدم استقرار العلاقات القانونية", "correct": false },
+            { "text": "تحقيق العدالة", "correct": true },
+            { "text": "تجاهل القوانين المحلية", "correct": false },
+            { "text": "إلغاء جميع القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "تحقيق العدالة" }
+    },
+    {
+        "question": "ما هو مفهوم \"الحقوق الإنسانية\" في إطار القانون الدولي؟",
+        "answers": [
+            { "text": "حقوق يمنحها القانون الوطني", "correct": false },
+            { "text": "حقوق غير قابلة للتصرف", "correct": true },
+            { "text": "حقوق خاصة بالدول فقط", "correct": false },
+            { "text": "حقوق تتعلق بالعلاقات التجارية", "correct": false }
+        ],
+        "correctAnswer": { "text": "حقوق غير قابلة للتصرف" }
+    },
+    {
+        "question": "كيف تؤثر القوانين المحلية على حقوق الإنسان؟",
+        "answers": [
+            { "text": "تلغي حقوق الإنسان", "correct": false },
+            { "text": "تعزز حقوق الإنسان", "correct": true },
+            { "text": "تزيد من القيود", "correct": false },
+            { "text": "لا تؤثر على حقوق الإنسان", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعزز حقوق الإنسان" }
+    },
+    {
+        "question": "ما هو مفهوم \"القانون الإنساني الدولي\"؟",
+        "answers": [
+            { "text": "قانون ينظم حقوق الأفراد في النزاعات المسلحة", "correct": true },
+            { "text": "قانون ينظم العلاقات التجارية", "correct": false },
+            { "text": "قانون ينظم العلاقات الداخلية فقط", "correct": false },
+            { "text": "قانون لا علاقة له بالنزاعات", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون ينظم حقوق الأفراد في النزاعات المسلحة" }
+    },
+    {
+        "question": "كيف يمكن أن يؤثر القانون الإنساني الدولي على النزاعات المسلحة؟",
+        "answers": [
+            { "text": "يزيد من العنف", "correct": false },
+            { "text": "يحمي حقوق المدنيين", "correct": true },
+            { "text": "لا يؤثر على النزاعات", "correct": false },
+            { "text": "يؤدي إلى إلغاء القوانين الوطنية", "correct": false }
+        ],
+        "correctAnswer": { "text": "يحمي حقوق المدنيين" }
+    },
+    {
+        "question": "ما هو مفهوم \"الجرائم الدولية\"؟",
+        "answers": [
+            { "text": "جرائم تحدث داخل الدول فقط", "correct": false },
+            { "text": "جرائم تتعلق بالنزاعات الداخلية", "correct": false },
+            { "text": "جرائم تتعارض مع القوانين الدولية", "correct": true },
+            { "text": "جرائم لا تعاقب عليها القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "جرائم تتعارض مع القوانين الدولية" }
+    },
+    {
+        "question": "كيف يؤثر مفهوم \"العدالة الدولية\" على الجرائم الدولية؟",
+        "answers": [
+            { "text": "يؤدي إلى عدم محاسبة الجناة", "correct": false },
+            { "text": "يعزز محاسبة الجناة", "correct": true },
+            { "text": "لا يؤثر على الجرائم", "correct": false },
+            { "text": "يؤدي إلى تجاهل القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "يعزز محاسبة الجناة" }
+    },
+    {
+        "question": "ما هو التأثير المحتمل لعدم تطبيق العدالة الدولية على المجتمع؟",
+        "answers": [
+            { "text": "زيادة الثقة في النظام القضائي", "correct": false },
+            { "text": "تعزيز حقوق الإنسان", "correct": false },
+            { "text": "زيادة الجرائم والانتهاكات", "correct": true },
+            { "text": "إلغاء جميع القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "زيادة الجرائم والانتهاكات" }
+    },
+    {
+        "question": "كيف يمكن أن تؤثر العولمة على تنازع القوانين؟",
+        "answers": [
+            { "text": "تعزز السيطرة الوطنية", "correct": false },
+            { "text": "تزيد من تعقيد القوانين", "correct": false },
+            { "text": "تعزز التعاون الدولي", "correct": true },
+            { "text": "لا تؤثر على أي شيء", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعزز التعاون الدولي" }
+    },
+    {
+        "question": "ما هو دور المؤسسات الدولية في تعزيز التعاون القانوني؟",
+        "answers": [
+            { "text": "تجاهل القوانين المحلية", "correct": false },
+            { "text": "تعزيز تطبيق القوانين الدولية", "correct": true },
+            { "text": "تطبيق القوانين الوطنية فقط", "correct": false },
+            { "text": "لا تؤثر على القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعزيز تطبيق القوانين الدولية" }
+    },
+    {
+        "question": "كيف تؤثر الاتفاقات الدولية على القوانين الوطنية؟",
+        "answers": [
+            { "text": "تلغي جميع القوانين الوطنية", "correct": false },
+            { "text": "تتکامل مع القوانين الوطنية", "correct": true },
+            { "text": "تؤدي إلى إلغاء الحقوق", "correct": false },
+            { "text": "لا تؤثر على القوانين الوطنية", "correct": false }
+        ],
+        "correctAnswer": { "text": "تتکامل مع القوانين الوطنية" }
+    },
+    {
+        "question": "ما هو مفهوم \"التحكيم\" في العلاقات الدولية؟",
+        "answers": [
+            { "text": "استخدام القوة لحل النزاعات", "correct": false },
+            { "text": "وسيلة قانونية لحل النزاعات", "correct": true },
+            { "text": "تجاهل القوانين", "correct": false },
+            { "text": "تطبيق جميع القوانين بالتساوي", "correct": false }
+        ],
+        "correctAnswer": { "text": "وسيلة قانونية لحل النزاعات" }
+    },
+    {
+        "question": "كيف يمكن أن يؤثر التحكيم على العلاقات بين الدول؟",
+        "answers": [
+            { "text": "يزيد من التوتر", "correct": false },
+            { "text": "يسهل الوصول إلى حلول", "correct": true },
+            { "text": "لا يؤثر على العلاقات", "correct": false },
+            { "text": "يؤدي إلى إلغاء القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "يسهل الوصول إلى حلول" }
+    },
+    {
+        "question": "ما هو مفهوم \"المسؤولية الدولية\"؟",
+        "answers": [
+            { "text": "مسؤولية الأفراد فقط", "correct": false },
+            { "text": "مسؤولية الدول عن الأفعال غير المشروعة", "correct": true },
+            { "text": "مسؤولية المنظمات غير الحكومية", "correct": false },
+            { "text": "لا توجد مسؤولية دولية", "correct": false }
+        ],
+        "correctAnswer": { "text": "مسؤولية الدول عن الأفعال غير المشروعة" }
+    },
+    {
+        "question": "كيف تؤثر المسؤولية الدولية على تصرفات الدول؟",
+        "answers": [
+            { "text": "تمنع الدول من التصرف بحرية", "correct": false },
+            { "text": "تعزز احترام القوانين الدولية", "correct": true },
+            { "text": "لا تؤثر على أي شيء", "correct": false },
+            { "text": "تؤدي إلى عدم الاستقرار", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعزز احترام القوانين الدولية" }
+    },
+    {
+        "question": "ما هو مفهوم \"الحق في التنمية\"؟",
+        "answers": [
+            { "text": "حق الدول في تطوير اقتصادها فقط", "correct": false },
+            { "text": "حق الأفراد في المشاركة في التنمية", "correct": true },
+            { "text": "حق الدول في تجاهل حقوق الإنسان", "correct": false },
+            { "text": "لا يوجد حق في التنمية", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق الأفراد في المشاركة في التنمية" }
+    },
+    {
+        "question": "كيف يمكن أن يؤثر الحق في التنمية على السياسات الدولية؟",
+        "answers": [
+            { "text": "يزيد من النزاعات", "correct": false },
+            { "text": "يعزز التعاون الدولي", "correct": true },
+            { "text": "لا يؤثر على السياسات", "correct": false },
+            { "text": "يؤدي إلى إلغاء الحقوق", "correct": false }
+        ],
+        "correctAnswer": { "text": "يعزز التعاون الدولي" }
+    },
+    {
+        "question": "ما هو التأثير المحتمل لعدم احترام حقوق الأفراد في التنمية؟",
+        "answers": [
+            { "text": "تحسين العلاقات الدولية", "correct": false },
+            { "text": "زيادة النزاعات والانتهاكات", "correct": true },
+            { "text": "استقرار قانوني", "correct": false },
+            { "text": "تقليل التعقيد", "correct": false }
+        ],
+        "correctAnswer": { "text": "زيادة النزاعات والانتهاكات" }
+    },
+    {
+        "question": "ما هو مفهوم \"التعاون الدولي\"؟",
+        "answers": [
+            { "text": "عمل الدول معاً لحل القضايا العالمية", "correct": true },
+            { "text": "تجاهل القوانين المحلية", "correct": false },
+            { "text": "تطبيق القوانين الوطنية فقط", "correct": false },
+            { "text": "لا يوجد تعاون دولي", "correct": false }
+        ],
+        "correctAnswer": { "text": "عمل الدول معاً لحل القضايا العالمية" }
+    },
+    {
+        "question": "كيف يمكن أن يؤثر التعاون الدولي على القضايا العالمية؟",
+        "answers": [
+            { "text": "يزيد من التعقيد", "correct": false },
+            { "text": "يسهل الوصول إلى حلول", "correct": true },
+            { "text": "لا يؤثر على القضايا", "correct": false },
+            { "text": "يؤدي إلى إلغاء الحقوق", "correct": false }
+        ],
+        "correctAnswer": { "text": "يسهل الوصول إلى حلول" }
+    },
+    {
+        "question": "ما هو دور المنظمات الدولية في تعزيز التعاون القانوني؟",
+        "answers": [
+            { "text": "تجاهل القوانين المحلية", "correct": false },
+            { "text": "تعزيز تطبيق القوانين الدولية", "correct": true },
+            { "text": "تطبيق القوانين الوطنية فقط", "correct": false },
+            { "text": "لا تؤثر على القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعزيز تطبيق القوانين الدولية" }
+    },
+    {
+        "question": "كيف تؤثر القوانين المحلية على التعاون الدولي؟",
+        "answers": [
+            { "text": "تلغي جميع القوانين الدولية", "correct": false },
+            { "text": "تعزز التعاون بين الدول", "correct": true },
+            { "text": "تزيد من القيود", "correct": false },
+            { "text": "لا تؤثر على التعاون", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعزز التعاون بين الدول" }
+    },
+    {
+        "question": "ما هو مفهوم \"العدالة الانتقالية\"؟",
+        "answers": [
+            { "text": "نظام قانوني قائم على الانتقام", "correct": false },
+            { "text": "عملية لتحقيق العدالة بعد النزاعات", "correct": true },
+            { "text": "عدم تطبيق أي قوانين", "correct": false },
+            { "text": "تجاهل حقوق الضحايا", "correct": false }
+        ],
+        "correctAnswer": { "text": "عملية لتحقيق العدالة بعد النزاعات" }
+    },
+    {
+        "question": "كيف يمكن أن تؤثر العدالة الانتقالية على المجتمعات بعد النزاعات؟",
+        "answers": [
+            { "text": "تزيد من الانقسام", "correct": false },
+            { "text": "تعزز المصالحة والسلام", "correct": true },
+            { "text": "لا تؤثر على المجتمعات", "correct": false },
+            { "text": "تؤدي إلى إلغاء الحقوق", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعزز المصالحة والسلام" }
+    },
+    {
+        "question": "ما هو مفهوم \"التحقيقات المستقلة\" في سياق العدالة الانتقالية؟",
+        "answers": [
+            { "text": "تحقيقات تجريها الدول فقط", "correct": false },
+            { "text": "تحقيقات تضمن محاسبة الجناة", "correct": true },
+            { "text": "تجاهل جميع القوانين", "correct": false },
+            { "text": "تحقيقات لا معنى لها", "correct": false }
+        ],
+        "correctAnswer": { "text": "تحقيقات تضمن محاسبة الجناة" }
+    },
+    {
+        "question": "كيف يمكن أن تؤثر التحقيقات المستقلة على حقوق الضحايا؟",
+        "answers": [
+            { "text": "تزيد من الانتهاكات", "correct": false },
+            { "text": "تعزز حقوق الضحايا", "correct": true },
+            { "text": "لا تؤثر على الحقوق", "correct": false },
+            { "text": "تؤدي إلى إلغاء الحقوق", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعزز حقوق الضحايا" }
+    },
+    {
+        "question": "ما هو التأثير المحتمل لعدم وجود آليات لمحاسبة الجناة؟",
+        "answers": [
+            { "text": "زيادة الثقة في النظام القضائي", "correct": false },
+            { "text": "تعزيز حقوق الإنسان", "correct": false },
+            { "text": "زيادة الجرائم والانتهاكات", "correct": true },
+            { "text": "إلغاء جميع القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "زيادة الجرائم والانتهاكات" }
+    },
+    {
+        "question": "ما هو مفهوم \"المسؤولية الجنائية الفردية\"؟",
+        "answers": [
+            { "text": "مسؤولية الدول فقط", "correct": false },
+            { "text": "مسؤولية الأفراد عن الجرائم الدولية", "correct": true },
+            { "text": "لا يوجد مفهوم للمسؤولية الجنائية", "correct": false },
+            { "text": "مسؤولية المنظمات فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "مسؤولية الأفراد عن الجرائم الدولية" }
+    },
+    {
+        "question": "كيف تؤثر المسؤولية الجنائية الفردية على محاسبة الجناة؟",
+        "answers": [
+            { "text": "تمنع محاسبة الجناة", "correct": false },
+            { "text": "تعزز محاسبة الجناة", "correct": true },
+            { "text": "لا تؤثر على المحاسبة", "correct": false },
+            { "text": "تؤدي إلى تجاهل القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعزز محاسبة الجناة" }
+    },
+    {
+        "question": "ما هو مفهوم \"جرائم الحرب\"؟",
+        "answers": [
+            { "text": "جرائم تحدث داخل الدول فقط", "correct": false },
+            { "text": "انتهاكات جسيمة لقوانين الحرب", "correct": true },
+            { "text": "جرائم تتعلق بالنزاعات الداخلية", "correct": false },
+            { "text": "لا توجد جرائم حرب", "correct": false }
+        ],
+        "correctAnswer": { "text": "انتهاكات جسيمة لقوانين الحرب" }
+    },
+    {
+        "question": "كيف يمكن أن تؤثر جرائم الحرب على العلاقات الدولية؟",
+        "answers": [
+            { "text": "تزيد من التوتر", "correct": true },
+            { "text": "تعزز التعاون الدولي", "correct": false },
+            { "text": "لا تؤثر على العلاقات", "correct": false },
+            { "text": "تؤدي إلى إلغاء القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "تزيد من التوتر" }
+    },
+    {
+        "question": "ما هو التأثير المحتمل لعدم محاسبة مرتكبي جرائم الحرب؟",
+        "answers": [
+            { "text": "زيادة الثقة في النظام القضائي", "correct": false },
+            { "text": "تعزيز حقوق الإنسان", "correct": false },
+            { "text": "زيادة الجرائم والانتهاكات", "correct": true },
+            { "text": "إلغاء جميع القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "زيادة الجرائم والانتهاكات" }
+    },
+    {
+        "question": "ما هو مفهوم \"العدالة الجنائية الدولية\"؟",
+        "answers": [
+            { "text": "نظام قانوني محلي", "correct": false },
+            { "text": "نظام قانوني دولي لمحاكمة الجرائم الدولية", "correct": true },
+            { "text": "لا يوجد مفهوم للعدالة الجنائية", "correct": false },
+            { "text": "نظام قانوني يتجاهل حقوق الأفراد", "correct": false }
+        ],
+        "correctAnswer": { "text": "نظام قانوني دولي لمحاكمة الجرائم الدولية" }
+    },
+    {
+        "question": "كيف تؤثر العدالة الجنائية الدولية على محاسبة الجناة؟",
+        "answers": [
+            { "text": "تمنع محاسبة الجناة", "correct": false },
+            { "text": "تعزز محاسبة الجناة", "correct": true },
+            { "text": "لا تؤثر على المحاسبة", "correct": false },
+            { "text": "تؤدي إلى تجاهل القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعزز محاسبة الجناة" }
+    },
+    {
+        "question": "ما هو مفهوم \"التحقيقات في جرائم الحرب\"؟",
+        "answers": [
+            { "text": "تجاهل جميع القوانين", "correct": false },
+            { "text": "عملية لفهم الجرائم المرتكبة أثناء النزاعات", "correct": true },
+            { "text": "تحقيقات تجرى فقط في الدول", "correct": false },
+            { "text": "لا توجد تحقيقات", "correct": false }
+        ],
+        "correctAnswer": { "text": "عملية لفهم الجرائم المرتكبة أثناء النزاعات" }
+    },
+    {
+        "question": "كيف يمكن أن تؤثر التحقيقات في جرائم الحرب على حقوق الضحايا؟",
+        "answers": [
+            { "text": "تزيد من الانتهاكات", "correct": false },
+            { "text": "تعزز حقوق الضحايا", "correct": true },
+            { "text": "لا تؤثر على الحقوق", "correct": false },
+            { "text": "تؤدي إلى إلغاء الحقوق", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعزز حقوق الضحايا" }
+    },
+    {
+        "question": "ما هو التأثير المحتمل لعدم وجود آليات لمحاسبة مرتكبي جرائم الحرب؟",
+        "answers": [
+            { "text": "زيادة الثقة في النظام القضائي", "correct": false },
+            { "text": "تعزيز حقوق الإنسان", "correct": false },
+            { "text": "زيادة الجرائم والانتهاكات", "correct": true },
+            { "text": "إلغاء جميع القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "زيادة الجرائم والانتهاكات" }
+    },
+    {
+        "question": "ما هو مفهوم \"العدالة التصالحية\"؟",
+        "answers": [
+            { "text": "نظام قانوني قائم على الانتقام", "correct": false },
+            { "text": "عملية تهدف إلى إصلاح الضرر وتحقيق المصالحة", "correct": true },
+            { "text": "عدم تطبيق أي قوانين", "correct": false },
+            { "text": "تجاهل حقوق الضحايا", "correct": false }
+        ],
+        "correctAnswer": { "text": "عملية تهدف إلى إصلاح الضرر وتحقيق المصالحة" }
+    },
+    {
+        "question": "كيف يمكن أن تؤثر العدالة التصالحية على المجتمعات بعد النزاعات؟",
+        "answers": [
+            { "text": "تزيد من الانقسام", "correct": false },
+            { "text": "تعزز المصالحة والسلام", "correct": true },
+            { "text": "لا تؤثر على المجتمعات", "correct": false },
+            { "text": "تؤدي إلى إلغاء الحقوق", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعزز المصالحة والسلام" }
+    },
+    {
+        "question": "ما هو مفهوم \"التعويضات\" في سياق العدالة الانتقالية؟",
+        "answers": [
+            { "text": "تقديم تعويضات للضحايا", "correct": true },
+            { "text": "تجاهل حقوق الضحايا", "correct": false },
+            { "text": "لا توجد تعويضات", "correct": false },
+            { "text": "تقديم تعويضات للجناة", "correct": false }
+        ],
+        "correctAnswer": { "text": "تقديم تعويضات للضحايا" }
+    },
+    {
+        "question": "كيف يمكن أن تؤثر التعويضات على حقوق الضحايا؟",
+        "answers": [
+            { "text": "تزيد من الانتهاكات", "correct": false },
+            { "text": "تعزز حقوق الضحايا", "correct": true },
+            { "text": "لا تؤثر على الحقوق", "correct": false },
+            { "text": "تؤدي إلى إلغاء الحقوق", "correct": false }
+        ],
+        "correctAnswer": { "text": "تعزز حقوق الضحايا" }
+    },
+    {
+        "question": "ما هو التأثير المحتمل لعدم توفير التعويضات للضحايا؟",
+        "answers": [
+            { "text": "زيادة الثقة في النظام القضائي", "correct": false },
+            { "text": "تعزيز حقوق الإنسان", "correct": false },
+            { "text": "زيادة الجرائم والانتهاكات", "correct": true },
+            { "text": "إلغاء جميع القوانين", "correct": false }
+        ],
+        "correctAnswer": { "text": "زيادة الجرائم والانتهاكات" }
+    },
+    {
+        "question": "ما هو مفهوم \"المصالحة الوطنية\"؟",
+        "answers": [
+            { "text": "عملية تهدف إلى إعادة بناء العلاقات بين المجتمع بعد النزاعات", "correct": true },
+            { "text": "تجاهل القوانين الوطنية", "correct": false },
+            { "text": "عدم وجود أي مصالحة", "correct": false },
+            { "text": "لا يوجد مفهوم للمصالحة", "correct": false }
+        ],
+        "correctAnswer": { "text": "عملية تهدف إلى إعادة بناء العلاقات بين المجتمع بعد النزاعات" }
+    }
+        ];
+
+        questions.sort(() => Math.random() - 0.5);
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = questions[currentQuestionIndex];
+            const questionElement = document.createElement('div');
+            questionElement.classList.add('question');
+            questionElement.innerText = currentQuestion.question;
+            questionContainer.appendChild(questionElement);
+
+            currentQuestion.answers.sort(() => Math.random() - 0.5);
+
+            currentQuestion.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.innerText = answer.text;
+                button.classList.add('answer');
+                button.addEventListener('click', () => selectAnswer(answer));
+                questionContainer.appendChild(button);
+            });
+
+            questionCountDisplay.innerText = `السؤال ${currentQuestionIndex + 1} من ${questions.length}`;
+        }
+
+        function resetState() {
+            nextButton.style.display = 'none';
+            questionContainer.innerHTML = '';
+        }
+
+        function selectAnswer(answer) {
+            const currentQuestion = questions[currentQuestionIndex];
+
+            const buttons = document.querySelectorAll('.answer');
+            buttons.forEach(button => {
+                button.disabled = true;
+            });
+
+            if (answer.correct) {
+                score++;
+                scoreDisplay.innerText = `نتيجة: ${score}`;
+            } else {
+                wrongAnswers.push(currentQuestion);
+            }
+
+            buttons.forEach(button => {
+                if (button.innerText === currentQuestion.correctAnswer.text) {
+                    button.classList.add('correct');
+                } else if (button.innerText === answer.text && !answer.correct) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            nextButton.style.display = 'block';
+        }
+
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        });
+
+        function showResult() {
+            questionContainer.style.display = 'none';
+            nextButton.style.display = 'none';
+            resultContainer.style.display = 'block';
+
+            const half = questions.length / 2;
+            finalScoreDisplay.innerText = `نتيجتك هي: ${score} من ${questions.length}`;
+            resultMessage.innerText = "انتهى الاختبار!";
+            finalScoreDisplay.style.color = score < half ? 'red' : 'green';
+
+            if (wrongAnswers.length > 0) {
+                wrongAnswers.forEach((question, index) => {
+                    const wrongAnswerElement = document.createElement('div');
+                    wrongAnswerElement.classList.add('wrong-answer-question');
+                    wrongAnswerElement.innerHTML = `
+                        <div>السؤال ${index + 1}: <span style="color: red;">${question.question}</span></div>
+                        <div>الاختيارات:</div>
+                        <ul>
+                            ${question.answers.map(a => `<li>${a.text}</li>`).join('')}
+                        </ul>
+                        <div class="correct-answer">الإجابة الصحيحة: ${question.correctAnswer.text}</div>
+                    `;
+                    wrongAnswersContainer.appendChild(wrongAnswerElement);
+                });
+            }
+        }
+
+        showQuestion();
+    </script>
+</body>
+</html>

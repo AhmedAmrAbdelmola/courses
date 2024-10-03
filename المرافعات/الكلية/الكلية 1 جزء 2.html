@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الأسئلة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* منع التمرير العمودي في الجسم */
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex-grow: 1; /* يسمح للحاوية بالنمو لملء المساحة المتاحة */
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* يسمح بالتمرير داخل الحاوية */
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .score {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .question-container {
+            margin-bottom: 20px;
+        }
+
+        .question {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        .answer {
+            display: block;
+            margin: 10px auto;
+            padding: 15px;
+            font-size: 1.2em;
+            background: #e7e7e7;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 80%;
+        }
+
+        .correct {
+            background-color: green;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: red;
+            color: white;
+        }
+
+        .next-button {
+            font-size: 1.5em;
+            background-color: yellow;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            border: 2px solid #ccc;
+        }
+
+        .result-container {
+            display: none;
+        }
+
+        .result-message {
+            font-size: 2em;
+        }
+
+        .final-score {
+            font-size: 1.5em;
+        }
+
+        .wrong-answer-container {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .wrong-answer-question {
+            background-color: #ffe6e6;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 80%;
+            max-width: 400px;
+            border: 1px solid red;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .wrong-answer-question .correct-answer {
+            color: green;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>اختبار الأسئلة</h1>
+        <div id="score" class="score">نتيجة: 0</div>
+        <div id="question-count" class="question-count"></div>
+        <div id="question-container" class="question-container"></div>
+        <button id="next-button" class="next-button" style="display:none;">السؤال التالي</button>
+        <div id="result-container" class="result-container">
+            <div id="result-message" class="result-message"></div>
+            <div id="final-score" class="final-score"></div>
+            <div id="wrong-answers" class="wrong-answer-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const questionContainer = document.getElementById('question-container');
+        const scoreDisplay = document.getElementById('score');
+        const nextButton = document.getElementById('next-button');
+        const questionCountDisplay = document.getElementById('question-count');
+        const resultContainer = document.getElementById('result-container');
+        const resultMessage = document.getElementById('result-message');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const wrongAnswersContainer = document.getElementById('wrong-answers');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let wrongAnswers = [];
+        let questions = [
+        {
+      "question": "ما هو الهدف الرئيسي من قانون المرفعات؟",
+      "answers": [
+        { "text": "تنظيم المنازعات الجنائية", "correct": false },
+        { "text": "تنظيم المنازعات المدنية", "correct": true },
+        { "text": "تنظيم المنازعات الإدارية", "correct": false },
+        { "text": "تنظيم المنازعات الأسرية", "correct": false }
+      ],
+      "correctAnswer": { "text": "تنظيم المنازعات المدنية" }
+    },
+    {
+      "question": "أي من المحاكم تختص بالنظر في المنازعات الاقتصادية؟",
+      "answers": [
+        { "text": "المحاكم الجنائية", "correct": false },
+        { "text": "المحاكم الابتدائية", "correct": false },
+        { "text": "المحاكم العمالية", "correct": false },
+        { "text": "المحاكم الاقتصادية", "correct": true }
+      ],
+      "correctAnswer": { "text": "المحاكم الاقتصادية" }
+    },
+    {
+      "question": "ما هو قانون الإجراءات الجنائية؟",
+      "answers": [
+        { "text": "قانون ينظم الحقوق المدنية", "correct": false },
+        { "text": "قانون ينظم كيفية النظر في القضايا الجنائية", "correct": true },
+        { "text": "قانون ينظم المنازعات الإدارية", "correct": false },
+        { "text": "قانون ينظم التنفيذ الجبري", "correct": false }
+      ],
+      "correctAnswer": { "text": "قانون ينظم كيفية النظر في القضايا الجنائية" }
+    },
+    {
+      "question": "ما هي المكونات الأساسية لقانون المرفعات؟",
+      "answers": [
+        { "text": "المبادئ والأشخاص", "correct": false },
+        { "text": "الأحكام والقرارات", "correct": false },
+        { "text": "القواعد والإجراءات", "correct": false },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما ذكر" }
+    },
+    {
+      "question": "ما هو الاختصاص العام للقضاء الإداري؟",
+      "answers": [
+        { "text": "النظر في المنازعات الجنائية", "correct": false },
+        { "text": "النظر في المنازعات الإدارية", "correct": true },
+        { "text": "النظر في المنازعات المدنية", "correct": false },
+        { "text": "النظر في المنازعات الأسرية", "correct": false }
+      ],
+      "correctAnswer": { "text": "النظر في المنازعات الإدارية" }
+    },
+    {
+      "question": "ماذا يعني مفهوم \"الاختصاص\" في القانون؟",
+      "answers": [
+        { "text": "قدرة المحكمة على النظر في قضية معينة", "correct": true },
+        { "text": "حق المدعي في تقديم دعوى", "correct": false },
+        { "text": "واجب القاضي في إصدار الحكم", "correct": false },
+        { "text": "جميع ما ذكر", "correct": false }
+      ],
+      "correctAnswer": { "text": "قدرة المحكمة على النظر في قضية معينة" }
+    },
+    {
+      "question": "ما هي الشروط اللازمة لقبول الدعوى؟",
+      "answers": [
+        { "text": "وجود مصلحة", "correct": true },
+        { "text": "وجود سبب قانوني", "correct": true },
+        { "text": "وجود خصومة", "correct": true },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما ذكر" }
+    },
+    {
+      "question": "كيف يتم تنفيذ الحكم عندما يكون المدين معسراً؟",
+      "answers": [
+        { "text": "يتم إلغاء الحكم", "correct": false },
+        { "text": "يتم تأجيل التنفيذ", "correct": true },
+        { "text": "يتم تنفيذ الحكم بطريقة مختلفة", "correct": false },
+        { "text": "لا يتم تنفيذ الحكم", "correct": false }
+      ],
+      "correctAnswer": { "text": "يتم تأجيل التنفيذ" }
+    },
+    {
+      "question": "ما هي أنواع الطعن في الأحكام الصادرة من محاكم الدرجة الأولى؟",
+      "answers": [
+        { "text": "الطعن بالاستئناف والطعن بالنقض", "correct": true },
+        { "text": "الطعن بالطعن المباشر والطعن غير المباشر", "correct": false },
+        { "text": "الطعن بالتحكيم والطعن الإجباري", "correct": false },
+        { "text": "الطعن الإداري والطعن المدني", "correct": false }
+      ],
+      "correctAnswer": { "text": "الطعن بالاستئناف والطعن بالنقض" }
+    },
+    {
+      "question": "ما هو مفهوم \"التنفيذ الجبري\"؟",
+      "answers": [
+        { "text": "تنفيذ الحكم برغبة المدين", "correct": false },
+        { "text": "تنفيذ الحكم بواسطة السلطة القضائية", "correct": true },
+        { "text": "تنفيذ الحكم بإرادة الأطراف", "correct": false },
+        { "text": "تنفيذ الحكم بدون حكم", "correct": false }
+      ],
+      "correctAnswer": { "text": "تنفيذ الحكم بواسطة السلطة القضائية" }
+    },
+    {
+      "question": "ما هي أنواع الأحكام التي يمكن أن تصدرها المحكمة؟",
+      "answers": [
+        { "text": "أحكام مدنية", "correct": true },
+        { "text": "أحكام جنائية", "correct": true },
+        { "text": "أحكام إدارية", "correct": true },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما ذكر" }
+    },
+    {
+      "question": "كيف يمكن للمدين تجنب تنفيذ الحكم؟",
+      "answers": [
+        { "text": "من خلال تقديم استئناف", "correct": true },
+        { "text": "من خلال دفع المبلغ المستحق", "correct": false },
+        { "text": "من خلال التهرب من المحكمة", "correct": false },
+        { "text": "جميع ما ذكر", "correct": false }
+      ],
+      "correctAnswer": { "text": "من خلال تقديم استئناف" }
+    },
+    {
+      "question": "ما هو الحكم الذي يمكن للمحكمة أن تصدره عند عدم تنفيذ المدين للحكم؟",
+      "answers": [
+        { "text": "الحكم بإعادة المحاكمة", "correct": false },
+        { "text": "الحكم بالحبس", "correct": true },
+        { "text": "الحكم بالإفراج", "correct": false },
+        { "text": "الحكم بإغلاق القضية", "correct": false }
+      ],
+      "correctAnswer": { "text": "الحكم بالحبس" }
+    },
+    {
+      "question": "ما هي الإجراءات التي يجب اتباعها عند تقديم طلب تنفيذ جبري؟",
+      "answers": [
+        { "text": "تقديم طلب إلى المحكمة فقط", "correct": false },
+        { "text": "تقديم طلب إلى إدارة التنفيذ", "correct": true },
+        { "text": "تقديم طلب إلى النيابة العامة", "correct": false },
+        { "text": "تقديم طلب إلى مجلس الدولة", "correct": false }
+      ],
+      "correctAnswer": { "text": "تقديم طلب إلى إدارة التنفيذ" }
+    },
+    {
+      "question": "ما هي العوامل التي تؤثر على سرعة إجراءات التنفيذ الجبري؟",
+      "answers": [
+        { "text": "تعقيد القضية", "correct": false },
+        { "text": "تعاون الأطراف", "correct": false },
+        { "text": "كفاءة إدارة التنفيذ", "correct": false },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما ذكر" }
+    },
+    {
+      "question": "ما هي العقوبات التي قد يتعرض لها المدين عند عدم تنفيذ الحكم؟",
+      "answers": [
+        { "text": "الحبس والغرامة", "correct": true },
+        { "text": "التهديد بالحبس", "correct": false },
+        { "text": "الإخطار فقط", "correct": false },
+        { "text": "لا شيء", "correct": false }
+      ],
+      "correctAnswer": { "text": "الحبس والغرامة" }
+    },
+    {
+      "question": "ما هو المبدأ الذي يجب أن يتبعه القاضي عند إصدار حكم بالتنفيذ الجبري؟",
+      "answers": [
+        { "text": "العدالة", "correct": true },
+        { "text": "السلطة", "correct": false },
+        { "text": "المال", "correct": false },
+        { "text": "القوة", "correct": false }
+      ],
+      "correctAnswer": { "text": "العدالة" }
+    },
+    {
+      "question": "ما هي الوسائل القانونية المتاحة لضمان تنفيذ الحكم؟",
+      "answers": [
+        { "text": "الحجز والتنفيذ الجبري", "correct": true },
+        { "text": "التهديد والضغط", "correct": false },
+        { "text": "الاستئناف والتأجيل", "correct": false },
+        { "text": "التحكيم والوساطة", "correct": false }
+      ],
+      "correctAnswer": { "text": "الحجز والتنفيذ الجبري" }
+    },
+    {
+      "question": "ما هي الوثائق المطلوبة لتقديم طلب تنفيذ جبري؟",
+      "answers": [
+        { "text": "إثبات الهوية فقط", "correct": false },
+        { "text": "حكم قضائي وبيانات المدين", "correct": true },
+        { "text": "شهادة من الشرطة", "correct": false },
+        { "text": "جميع ما ذكر", "correct": false }
+      ],
+      "correctAnswer": { "text": "حكم قضائي وبيانات المدين" }
+    },
+    {
+      "question": "ما هي الآثار القانونية للتنفيذ الجبري على المدين؟",
+      "answers": [
+        { "text": "فقدان الأصول", "correct": true },
+        { "text": "زيادة الديون", "correct": false },
+        { "text": "تحسين الوضع المالي", "correct": false },
+        { "text": "لا شيء", "correct": false }
+      ],
+      "correctAnswer": { "text": "فقدان الأصول" }
+    },
+    {
+      "question": "كيف يمكن للمدين أن يطعن في إجراءات التنفيذ الجبري؟",
+      "answers": [
+        { "text": "بتقديم شكوى", "correct": false },
+        { "text": "بتقديم استئناف", "correct": true },
+        { "text": "بتقديم طلب إلى المحكمة", "correct": false },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "بتقديم استئناف" }
+    },
+    {
+      "question": "ما هي المدة الزمنية المحددة لتقديم طلب التنفيذ الجبري بعد صدور الحكم؟",
+      "answers": [
+        { "text": "30 يوماً", "correct": true },
+        { "text": "60 يوماً", "correct": false },
+        { "text": "90 يوماً", "correct": false },
+        { "text": "لا يوجد مدة محددة", "correct": false }
+      ],
+      "correctAnswer": { "text": "30 يوماً" }
+    },
+    {
+      "question": "ما هو دور النيابة العامة في تنفيذ الأحكام القضائية؟",
+      "answers": [
+        { "text": "لا دور لها", "correct": true },
+        { "text": "تقديم المشورة القانونية", "correct": false },
+        { "text": "الإشراف على التنفيذ", "correct": false },
+        { "text": "فرض الغرامات", "correct": false }
+      ],
+      "correctAnswer": { "text": "لا دور لها" }
+    },
+    {
+      "question": "كيف يتم تحديد المحكمة المختصة في منازعات التنفيذ الجبري؟",
+      "answers": [
+        { "text": "بناءً على مكان إقامة المدين", "correct": false },
+        { "text": "بناءً على نوع النزاع", "correct": false },
+        { "text": "بناءً على قيمة الحكم", "correct": false },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما ذكر" }
+    },
+    {
+      "question": "ما هي الحقوق التي يتمتع بها المدين أثناء إجراءات التنفيذ الجبري؟",
+      "answers": [
+        { "text": "الحق في الاستئناف", "correct": false },
+        { "text": "الحق في الدفاع عن نفسه", "correct": false },
+        { "text": "الحق في تقديم مستندات", "correct": false },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما ذكر" }
+    },
+    {
+      "question": "ما هي الأسباب التي قد تؤدي إلى تأجيل تنفيذ الحكم؟",
+      "answers": [
+        { "text": "عدم وجود المدين", "correct": false },
+        { "text": "تقديم استئناف", "correct": false },
+        { "text": "تعقيد القضية", "correct": false },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما ذكر" }
+    },
+    {
+      "question": "كيف يمكن للمدين أن يثبت وجود عذر قهري يمنعه من تنفيذ الحكم؟",
+      "answers": [
+        { "text": "بتقديم شهادة طبية", "correct": true },
+        { "text": "بتقديم مستندات مالية", "correct": false },
+        { "text": "بشهادة الشهود", "correct": false },
+        { "text": "جميع ما ذكر", "correct": false }
+      ],
+      "correctAnswer": { "text": "بتقديم شهادة طبية" }
+    },
+    {
+      "question": "ما هي الأدوات القانونية التي يمكن استخدامها لفرض التنفيذ الجبري؟",
+      "answers": [
+        { "text": "الحجز الإداري", "correct": true },
+        { "text": "الإخطار القضائي", "correct": false },
+        { "text": "استئناف الحكم", "correct": false },
+        { "text": "التحكيم", "correct": false }
+      ],
+      "correctAnswer": { "text": "الحجز الإداري" }
+    },
+    {
+      "question": "كيف يتم التعامل مع الأحكام القضائية التي تتعلق بالتزامات شخصية؟",
+      "answers": [
+        { "text": "يمكن تنفيذها مباشرة", "correct": true },
+        { "text": "لا يمكن تنفيذها", "correct": false },
+        { "text": "تتطلب إجراءات خاصة", "correct": false },
+        { "text": "يتم إلغاؤها", "correct": false }
+      ],
+      "correctAnswer": { "text": "يمكن تنفيذها مباشرة" }
+    },
+    {
+      "question": "ما هي الإجراءات التي يمكن للمحكمة اتخاذها ضد المدين المماطل؟",
+      "answers": [
+        { "text": "فرض غرامات", "correct": true },
+        { "text": "تقديم المشورة", "correct": false },
+        { "text": "إعادة النظر في الحكم", "correct": false },
+        { "text": "لا شيء", "correct": false }
+      ],
+      "correctAnswer": { "text": "فرض غرامات" }
+    },
+    {
+      "question": "ما هي أنواع المنازعات التي يشملها قانون المرفعات؟",
+      "answers": [
+        { "text": "منازعات مدنية", "correct": true },
+        { "text": "منازعات جنائية", "correct": false },
+        { "text": "منازعات إدارية", "correct": false },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما ذكر" }
+    },
+    {
+      "question": "ما هي الإجراءات التي يجب اتباعها عند رفع دعوى أمام المحكمة؟",
+      "answers": [
+        { "text": "تقديم الطلب", "correct": true },
+        { "text": "تقديم الأدلة", "correct": true },
+        { "text": "حضور الجلسات", "correct": true },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما ذكر" }
+    },
+    {
+      "question": "ما هو مفهوم \"التقاضي\" في القانون؟",
+      "answers": [
+        { "text": "تقديم الشكاوى", "correct": false },
+        { "text": "رفع الدعاوى أمام المحاكم", "correct": true },
+        { "text": "تنفيذ الأحكام", "correct": false },
+        { "text": "جميع ما ذكر", "correct": false }
+      ],
+      "correctAnswer": { "text": "رفع الدعاوى أمام المحاكم" }
+    },
+    {
+      "question": "ما هي حقوق الأطراف في المنازعات القضائية؟",
+      "answers": [
+        { "text": "الحق في الدفاع", "correct": true },
+        { "text": "الحق في الاستئناف", "correct": true },
+        { "text": "الحق في الحصول على حكم عادل", "correct": true },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما ذكر" }
+    },
+    {
+      "question": "ما هو الفرق بين المحاكم الابتدائية ومحاكم الاستئناف؟",
+      "answers": [
+        { "text": "الأولى تنظر القضايا، والثانية تنظر الطعون", "correct": true },
+        { "text": "الأولى تتعامل مع الشكاوى، والثانية مع الأحكام", "correct": false },
+        { "text": "الأولى تفرض العقوبات، والثانية تحل النزاعات", "correct": false },
+        { "text": "جميع ما ذكر", "correct": false }
+      ],
+      "correctAnswer": { "text": "الأولى تنظر القضايا، والثانية تنظر الطعون" }
+    },
+    {
+      "question": "ما هي أنواع الأحكام التي تصدرها محكمة الاستئناف؟",
+      "answers": [
+        { "text": "تأييد الحكم", "correct": true },
+        { "text": "إلغاء الحكم", "correct": true },
+        { "text": "تعديل الحكم", "correct": true },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما ذكر" }
+    },
+    {
+      "question": "ما هي الشروط اللازمة لقبول استئناف الحكم؟",
+      "answers": [
+        { "text": "وجود سبب قانوني", "correct": true },
+        { "text": "وجود مصلحة", "correct": true },
+        { "text": "تقديم الطلب في المدة المحددة", "correct": true },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما ذكر" }
+    },
+    {
+      "question": "كيف يتم تحديد قيمة التعويض في القضايا المدنية؟",
+      "answers": [
+        { "text": "بناءً على تقديرات القاضي", "correct": false },
+        { "text": "بناءً على الخسائر الفعلية", "correct": true },
+        { "text": "بناءً على القوانين المعمول بها", "correct": true },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما ذكر" }
+    },
+    {
+      "question": "ما هو دور الخبراء في المنازعات القضائية؟",
+      "answers": [
+        { "text": "تقديم المشورة القانونية", "correct": false },
+        { "text": "تقديم الأدلة الفنية", "correct": true },
+        { "text": "تقديم الشهادات", "correct": false },
+        { "text": "جميع ما ذكر", "correct": false }
+      ],
+      "correctAnswer": { "text": "تقديم الأدلة الفنية" }
+    },
+    {
+      "question": "كيف يمكن للمدين أن يثبت عدم قدرته على الدفع؟",
+      "answers": [
+        { "text": "بتقديم مستندات مالية", "correct": true },
+        { "text": "بشهادة الشهود", "correct": false },
+        { "text": "بتقديم طلب رسمي", "correct": false },
+        { "text": "جميع ما ذكر", "correct": false }
+      ],
+      "correctAnswer": { "text": "بتقديم مستندات مالية" }
+    },
+    {
+      "question": "ما هي العقوبات التي يمكن أن تفرض على المدين في حالة التأخير في التنفيذ؟",
+      "answers": [
+        { "text": "الغرامة", "correct": true },
+        { "text": "الحبس", "correct": true },
+        { "text": "كلاهما", "correct": true },
+        { "text": "لا شيء", "correct": false }
+      ],
+      "correctAnswer": { "text": "كلاهما" }
+    },
+    {
+      "question": "ما هي الإجراءات التي يمكن اتخاذها ضد المدين الذي يتهرب من التنفيذ؟",
+      "answers": [
+        { "text": "الحجز على أمواله", "correct": true },
+        { "text": "تقديم بلاغ للشرطة", "correct": false },
+        { "text": "إعادة النظر في الحكم", "correct": false },
+        { "text": "جميع ما ذكر", "correct": false }
+      ],
+      "correctAnswer": { "text": "الحجز على أمواله" }
+    },
+    {
+      "question": "ما هو دور الشرطة في تنفيذ الأحكام القضائية؟",
+      "answers": [
+        { "text": "الإشراف على التنفيذ", "correct": false },
+        { "text": "توفير الأمن", "correct": false },
+        { "text": "تنفيذ الأحكام", "correct": false },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما ذكر" }
+    },
+    {
+      "question": "ما هو مفهوم \"التحكيم\" في المنازعات؟",
+      "answers": [
+        { "text": "حل النزاع عن طريق قاضي", "correct": false },
+        { "text": "حل النزاع عن طريق طرف ثالث", "correct": true },
+        { "text": "حل النزاع عن طريق الوساطة", "correct": false },
+        { "text": "جميع ما ذكر", "correct": false }
+      ],
+      "correctAnswer": { "text": "حل النزاع عن طريق طرف ثالث" }
+    },
+    {
+      "question": "ما هي المدة الزمنية التي يمكن أن تستغرقها إجراءات التحكيم؟",
+      "answers": [
+        { "text": "أسبوعين", "correct": false },
+        { "text": "شهر", "correct": false },
+        { "text": "يعتمد على القضية", "correct": true },
+        { "text": "لا يوجد مدة محددة", "correct": false }
+      ],
+      "correctAnswer": { "text": "يعتمد على القضية" }
+    },
+    {
+      "question": "كيف يمكن للأطراف في المنازعات القانونية حل نزاعاتهم بدون اللجوء للمحكمة؟",
+      "answers": [
+        { "text": "عن طريق التحكيم", "correct": true },
+        { "text": "عن طريق الوساطة", "correct": true },
+        { "text": "عن طريق الاتفاقات", "correct": true },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما ذكر" }
+    },
+    {
+      "question": "ماذا يحدث إذا لم يحضر المدين جلسة المحكمة؟",
+      "answers": [
+        { "text": "يتم إصدار الحكم غيابيًا", "correct": true },
+        { "text": "يتم تأجيل الجلسة", "correct": false },
+        { "text": "يتم إلغاء الدعوى", "correct": false },
+        { "text": "لا يحدث شيء", "correct": false }
+      ],
+      "correctAnswer": { "text": "يتم إصدار الحكم غيابيًا" }
+    },
+    {
+      "question": "ما هو دور القاضي في منازعات التنفيذ الجبري؟",
+      "answers": [
+        { "text": "إصدار الأحكام", "correct": true },
+        { "text": "الإشراف على الإجراءات", "correct": true },
+        { "text": "توجيه الأطراف", "correct": true },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما ذكر" }
+    },
+    {
+      "question": "ما هي المنازعات التي يمكن أن تنظر فيها المحاكم الاقتصادية؟",
+      "answers": [
+        { "text": "المنازعات التجارية", "correct": true },
+        { "text": "المنازعات المالية", "correct": true },
+        { "text": "المنازعات المتعلقة بالاستثمار", "correct": true },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما ذكر" }
+    },
+    {
+      "question": "ما هي الأبعاد القانونية للتنفيذ الجبري؟",
+      "answers": [
+        { "text": "التأثير على حقوق المدين", "correct": true },
+        { "text": "التأثير على حقوق الدائن", "correct": true },
+        { "text": "التأثير على النظام القضائي", "correct": true },
+        { "text": "جميع ما ذكر", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما ذكر" }
+    }
+        ];
+
+        questions.sort(() => Math.random() - 0.5);
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = questions[currentQuestionIndex];
+            const questionElement = document.createElement('div');
+            questionElement.classList.add('question');
+            questionElement.innerText = currentQuestion.question;
+            questionContainer.appendChild(questionElement);
+
+            currentQuestion.answers.sort(() => Math.random() - 0.5);
+
+            currentQuestion.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.innerText = answer.text;
+                button.classList.add('answer');
+                button.addEventListener('click', () => selectAnswer(answer));
+                questionContainer.appendChild(button);
+            });
+
+            questionCountDisplay.innerText = `السؤال ${currentQuestionIndex + 1} من ${questions.length}`;
+        }
+
+        function resetState() {
+            nextButton.style.display = 'none';
+            questionContainer.innerHTML = '';
+        }
+
+        function selectAnswer(answer) {
+            const currentQuestion = questions[currentQuestionIndex];
+
+            const buttons = document.querySelectorAll('.answer');
+            buttons.forEach(button => {
+                button.disabled = true; // تعطيل الأزرار بعد الاختيار
+            });
+
+            if (answer.correct) {
+                score++;
+                scoreDisplay.innerText = `نتيجة: ${score}`;
+            } else {
+                wrongAnswers.push(currentQuestion);
+            }
+
+            buttons.forEach(button => {
+                if (button.innerText === currentQuestion.correctAnswer.text) {
+                    button.classList.add('correct');
+                } else if (button.innerText === answer.text && !answer.correct) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            nextButton.style.display = 'block';
+        }
+
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        });
+
+        function showResult() {
+            questionContainer.style.display = 'none';
+            nextButton.style.display = 'none';
+            resultContainer.style.display = 'block';
+
+            finalScoreDisplay.innerText = `نتيجتك النهائية: ${score} من ${questions.length}`;
+            resultMessage.innerText = 'انتهى الاختبار!';
+
+            if (wrongAnswers.length > 0) {
+                wrongAnswers.forEach(question => {
+                    const wrongAnswerElement = document.createElement('div');
+                    wrongAnswerElement.classList.add('wrong-answer-question');
+                    wrongAnswerElement.innerHTML = `
+                        <div>${question.question}</div>
+                        <div class="correct-answer">الإجابة الصحيحة: ${question.correctAnswer.text}</div>
+                        <ul>
+                            ${question.answers.map(ans => `<li>${ans.text}</li>`).join('')}
+                        </ul>
+                    `;
+                    wrongAnswersContainer.appendChild(wrongAnswerElement);
+                });
+            } else {
+                wrongAnswersContainer.innerHTML = '<div>لا توجد إجابات خاطئة!</div>';
+            }
+        }
+
+        showQuestion();
+    </script>
+</body>
+</html>

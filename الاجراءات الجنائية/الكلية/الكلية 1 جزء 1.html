@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الأسئلة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* منع التمرير العمودي في الجسم */
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex-grow: 1; /* يسمح للحاوية بالنمو لملء المساحة المتاحة */
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* يسمح بالتمرير داخل الحاوية */
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .score {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .question-container {
+            margin-bottom: 20px;
+        }
+
+        .question {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        .answer {
+            display: block;
+            margin: 10px auto;
+            padding: 15px;
+            font-size: 1.2em;
+            background: #e7e7e7;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 80%;
+        }
+
+        .correct {
+            background-color: green;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: red;
+            color: white;
+        }
+
+        .next-button {
+            font-size: 1.5em;
+            background-color: yellow;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            border: 2px solid #ccc;
+        }
+
+        .result-container {
+            display: none;
+        }
+
+        .result-message {
+            font-size: 2em;
+        }
+
+        .final-score {
+            font-size: 1.5em;
+        }
+
+        .wrong-answer-container {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .wrong-answer-question {
+            background-color: #ffe6e6;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 80%;
+            max-width: 400px;
+            border: 1px solid red;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .wrong-answer-question .correct-answer {
+            color: green;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>اختبار الأسئلة</h1>
+        <div id="score" class="score">نتيجة: 0</div>
+        <div id="question-count" class="question-count"></div>
+        <div id="question-container" class="question-container"></div>
+        <button id="next-button" class="next-button" style="display:none;">السؤال التالي</button>
+        <div id="result-container" class="result-container">
+            <div id="result-message" class="result-message"></div>
+            <div id="final-score" class="final-score"></div>
+            <div id="wrong-answers" class="wrong-answer-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const questionContainer = document.getElementById('question-container');
+        const scoreDisplay = document.getElementById('score');
+        const nextButton = document.getElementById('next-button');
+        const questionCountDisplay = document.getElementById('question-count');
+        const resultContainer = document.getElementById('result-container');
+        const resultMessage = document.getElementById('result-message');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const wrongAnswersContainer = document.getElementById('wrong-answers');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let wrongAnswers = [];
+        let questions = [
+        {
+        "question": "ما هو الهدف الرئيسي من الإجراءات الجنائية؟",
+        "answers": [
+            { "text": "حماية حقوق المتهم", "correct": false },
+            { "text": "جمع الأدلة", "correct": false },
+            { "text": "توقيع العقوبات", "correct": false },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "من هي السلطة الموكلة بتحريك الدعوة الجنائية؟",
+        "answers": [
+            { "text": "الشرطة", "correct": false },
+            { "text": "النيابة العامة", "correct": true },
+            { "text": "المحكمة", "correct": false },
+            { "text": "الدفاع", "correct": false }
+        ],
+        "correctAnswer": { "text": "النيابة العامة" }
+    },
+    {
+        "question": "ما هي المرحلة الأولى في الإجراءات الجنائية؟",
+        "answers": [
+            { "text": "التحقيق", "correct": false },
+            { "text": "جمع الأدلة", "correct": true },
+            { "text": "المحاكمة", "correct": false },
+            { "text": "الاستئناف", "correct": false }
+        ],
+        "correctAnswer": { "text": "جمع الأدلة" }
+    },
+    {
+        "question": "التحقيق الابتدائي يتضمن:",
+        "answers": [
+            { "text": "إصدار الحكم", "correct": false },
+            { "text": "جمع الأدلة", "correct": true },
+            { "text": "استئناف الحكم", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جمع الأدلة" }
+    },
+    {
+        "question": "من يقوم بتحقيق الجرائم في مرحلة التحقيق الابتدائي؟",
+        "answers": [
+            { "text": "المفتش", "correct": false },
+            { "text": "قاضي التحقيق", "correct": true },
+            { "text": "النيابة العامة", "correct": false },
+            { "text": "الدفاع", "correct": false }
+        ],
+        "correctAnswer": { "text": "قاضي التحقيق" }
+    },
+    {
+        "question": "ما هو دور الشهود في الإجراءات الجنائية؟",
+        "answers": [
+            { "text": "تقديم الأدلة فقط", "correct": false },
+            { "text": "إبداء الشهادات", "correct": true },
+            { "text": "توقيع العقوبات", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "إبداء الشهادات" }
+    },
+    {
+        "question": "ما هو مصطلح \"الأدلة\" في السياق الجنائي؟",
+        "answers": [
+            { "text": "شهادات المتهم", "correct": false },
+            { "text": "معلومات تدعم القضية", "correct": true },
+            { "text": "أحكام سابقة", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "معلومات تدعم القضية" }
+    },
+    {
+        "question": "ما هو الأمر بحفظ الأمر؟",
+        "answers": [
+            { "text": "إنهاء القضية", "correct": false },
+            { "text": "استئناف الحكم", "correct": false },
+            { "text": "عدم كفاية الأدلة", "correct": true },
+            { "text": "بدء التحقيق", "correct": false }
+        ],
+        "correctAnswer": { "text": "عدم كفاية الأدلة" }
+    },
+    {
+        "question": "ما هي المرحلة التي تلي جمع الأدلة؟",
+        "answers": [
+            { "text": "المحاكمة", "correct": false },
+            { "text": "التحقيق", "correct": true },
+            { "text": "الاستئناف", "correct": false },
+            { "text": "الحكم", "correct": false }
+        ],
+        "correctAnswer": { "text": "التحقيق" }
+    },
+    {
+        "question": "ما هو دور المحكمة في الإجراءات الجنائية؟",
+        "answers": [
+            { "text": "جمع الأدلة", "correct": false },
+            { "text": "إصدار الحكم", "correct": true },
+            { "text": "التحقيق", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "إصدار الحكم" }
+    },
+    {
+        "question": "ما هي الخصائص الأساسية لجمع الأدلة؟",
+        "answers": [
+            { "text": "السرية", "correct": false },
+            { "text": "الشفافية", "correct": true },
+            { "text": "القوة", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الشفافية" }
+    },
+    {
+        "question": "ما هو مصطلح \"الحق في الدفاع\"؟",
+        "answers": [
+            { "text": "حق المتهم في تقديم الشهادات", "correct": false },
+            { "text": "حق المتهم في محامي", "correct": true },
+            { "text": "حق الشرطة في التحقيق", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق المتهم في محامي" }
+    },
+    {
+        "question": "من هو الشخص الذي يحق له تقديم الشكوى؟",
+        "answers": [
+            { "text": "المتهم", "correct": false },
+            { "text": "الضحية", "correct": true },
+            { "text": "الشهود", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الضحية" }
+    },
+    {
+        "question": "ما هي النتيجة المحتملة لعدم كفاية الأدلة؟",
+        "answers": [
+            { "text": "حفظ الأمر", "correct": true },
+            { "text": "إصدار الحكم", "correct": false },
+            { "text": "بدء التحقيق", "correct": false },
+            { "text": "استئناف الحكم", "correct": false }
+        ],
+        "correctAnswer": { "text": "حفظ الأمر" }
+    },
+    {
+        "question": "ما هو مفهوم \"المحاكمة الشفوية\"؟",
+        "answers": [
+            { "text": "إجراء سري", "correct": false },
+            { "text": "إجراء علني", "correct": true },
+            { "text": "إجراء كتابي", "correct": false },
+            { "text": "إجراء غير رسمي", "correct": false }
+        ],
+        "correctAnswer": { "text": "إجراء علني" }
+    },
+    {
+        "question": "ما هي المرحلة الأخيرة في الإجراءات الجنائية؟",
+        "answers": [
+            { "text": "جمع الأدلة", "correct": false },
+            { "text": "الاستئناف", "correct": false },
+            { "text": "المحاكمة", "correct": true },
+            { "text": "التحقيق", "correct": false }
+        ],
+        "correctAnswer": { "text": "المحاكمة" }
+    },
+    {
+        "question": "ما هو دور النيابة العامة في المحاكمة؟",
+        "answers": [
+            { "text": "الدفاع عن المتهم", "correct": false },
+            { "text": "جمع الأدلة", "correct": false },
+            { "text": "تقديم الأدلة", "correct": true },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "تقديم الأدلة" }
+    },
+    {
+        "question": "ما هو المبدأ الأساسي للمحاكمة العادلة؟",
+        "answers": [
+            { "text": "السرية", "correct": false },
+            { "text": "الشفافية", "correct": true },
+            { "text": "السرعة", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الشفافية" }
+    },
+    {
+        "question": "ما هو الفرق بين الادعاء المباشر والادعاء غير المباشر؟",
+        "answers": [
+            { "text": "لا يوجد فرق", "correct": false },
+            { "text": "الادعاء المباشر يتطلب وجود محامي", "correct": false },
+            { "text": "الادعاء المباشر يتم من قبل الضحية", "correct": true },
+            { "text": "الادعاء غير المباشر يتم من قبل النيابة العامة", "correct": false }
+        ],
+        "correctAnswer": { "text": "الادعاء المباشر يتم من قبل الضحية" }
+    },
+    {
+        "question": "ما هو دور الشهود في المرحلة الابتدائية؟",
+        "answers": [
+            { "text": "تقديم الأدلة", "correct": false },
+            { "text": "إبداء الشهادات", "correct": true },
+            { "text": "توقيع العقوبات", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "إبداء الشهادات" }
+    },
+    {
+        "question": "ما هو مفهوم \"التهم الموجهة\"؟",
+        "answers": [
+            { "text": "الأدلة المقدمة", "correct": false },
+            { "text": "الشهادات", "correct": false },
+            { "text": "الاتهامات الرسمية", "correct": true },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الاتهامات الرسمية" }
+    },
+    {
+        "question": "ما هي القوانين التي تنظم الإجراءات الجنائية؟",
+        "answers": [
+            { "text": "قانون العقوبات", "correct": false },
+            { "text": "قانون الإجراءات الجنائية", "correct": true },
+            { "text": "قانون حقوق الإنسان", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "قانون الإجراءات الجنائية" }
+    },
+    {
+        "question": "ما هو الهدف من التحقيق الابتدائي؟",
+        "answers": [
+            { "text": "تحديد المتهم", "correct": false },
+            { "text": "جمع الأدلة", "correct": true },
+            { "text": "إصدار الحكم", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جمع الأدلة" }
+    },
+    {
+        "question": "ما هي الخصائص الأساسية لجمع الأدلة؟",
+        "answers": [
+            { "text": "السرية", "correct": false },
+            { "text": "الشفافية", "correct": true },
+            { "text": "القوة", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الشفافية" }
+    },
+    {
+        "question": "ما هو مصطلح \"الاستئناف\"؟",
+        "answers": [
+            { "text": "إعادة التحقيق", "correct": false },
+            { "text": "تقديم الأدلة مرة أخرى", "correct": false },
+            { "text": "الطعن في الحكم", "correct": true },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الطعن في الحكم" }
+    },
+    {
+        "question": "ما هي الأسباب التي تؤدي إلى حفظ الأمر؟",
+        "answers": [
+            { "text": "عدم كفاية الأدلة", "correct": false },
+            { "text": "غياب الشهود", "correct": false },
+            { "text": "عدم وجود جريمة", "correct": false },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو مصطلح \"المتهم\"؟",
+        "answers": [
+            { "text": "الشخص الذي ارتكب الجريمة", "correct": false },
+            { "text": "الشخص الذي تم اتهامه", "correct": true },
+            { "text": "الشخص الذي شهد الجريمة", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الشخص الذي تم اتهامه" }
+    },
+    {
+        "question": "ما هو الهدف من توثيق الأدلة؟",
+        "answers": [
+            { "text": "تأكيد صحتها", "correct": false },
+            { "text": "استخدامها في المحاكمة", "correct": true },
+            { "text": "حماية حقوق المتهم", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "استخدامها في المحاكمة" }
+    },
+    {
+        "question": "ما هو دور قاضي التحقيق؟",
+        "answers": [
+            { "text": "جمع الأدلة", "correct": false },
+            { "text": "إصدار الحكم", "correct": false },
+            { "text": "التحقيق في القضايا", "correct": true },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "التحقيق في القضايا" }
+    },
+    {
+        "question": "ما هو مصطلح \"الأدلة المباشرة\"؟",
+        "answers": [
+            { "text": "الأدلة التي تأتي من الشهود", "correct": true },
+            { "text": "الأدلة التي تأتي من الأشياء المادية", "correct": false },
+            { "text": "الأدلة التي تأتي من الأقوال", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الأدلة التي تأتي من الشهود" }
+    },
+    {
+        "question": "ما هو مفهوم \"التحقيق السرّي\"؟",
+        "answers": [
+            { "text": "التحقيق الذي يتم في السر", "correct": true },
+            { "text": "التحقيق الذي يتم بحضور الشهود", "correct": false },
+            { "text": "التحقيق الذي يتم علنياً", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "التحقيق الذي يتم في السر" }
+    },
+    {
+        "question": "ما هو دور الشرطة في الإجراءات الجنائية؟",
+        "answers": [
+            { "text": "جمع الأدلة", "correct": true },
+            { "text": "تقديم الشهادات", "correct": false },
+            { "text": "تنفيذ الأحكام", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "جمع الأدلة" }
+    },
+    {
+        "question": "ما هو مفهوم \"التحقيق في الحضور\"؟",
+        "answers": [
+            { "text": "التحقيق مع المتهمين في غيابهم", "correct": false },
+            { "text": "التحقيق مع المتهمين بحضورهم", "correct": true },
+            { "text": "التحقيق مع الشهود فقط", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "التحقيق مع المتهمين بحضورهم" }
+    },
+    {
+        "question": "ما هو مصطلح \"الأدلة غير المباشرة\"؟",
+        "answers": [
+            { "text": "الأدلة التي لا تدعم القضية", "correct": true },
+            { "text": "الأدلة التي تأتي من الشهود", "correct": false },
+            { "text": "الأدلة التي تأتي من الأشياء المادية", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الأدلة التي لا تدعم القضية" }
+    },
+    {
+        "question": "ما هو دور المحكمة في مرحلة الاستئناف؟",
+        "answers": [
+            { "text": "إعادة النظر في الحكم الصادر", "correct": true },
+            { "text": "إصدار حكم جديد", "correct": false },
+            { "text": "جمع الأدلة", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "إعادة النظر في الحكم الصادر" }
+    },
+    {
+        "question": "ما هو مفهوم \"التحقيق العلني\"؟",
+        "answers": [
+            { "text": "التحقيق الذي يتم في السر", "correct": false },
+            { "text": "التحقيق الذي يتم بحضور الشهود", "correct": true },
+            { "text": "التحقيق الذي يتم علنياً", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "التحقيق الذي يتم بحضور الشهود" }
+    },
+    {
+        "question": "ما هو دور الدفاع في الإجراءات الجنائية؟",
+        "answers": [
+            { "text": "حماية حقوق المتهم", "correct": true },
+            { "text": "تقديم الشهادات", "correct": false },
+            { "text": "جمع الأدلة", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "حماية حقوق المتهم" }
+    },
+    {
+        "question": "ما هو مصطلح \"التحقيق في الجريمة\"؟",
+        "answers": [
+            { "text": "التحقيق في الأدلة", "correct": false },
+            { "text": "التحقيق في الشهادات", "correct": false },
+            { "text": "التحقيق في جميع جوانب القضية", "correct": true },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "التحقيق في جميع جوانب القضية" }
+    },
+    {
+        "question": "ما هو الهدف من المحاكمة العادلة؟",
+        "answers": [
+            { "text": "حماية حقوق الضحية", "correct": false },
+            { "text": "ضمان حقوق المتهم", "correct": false },
+            { "text": "تحقيق العدالة", "correct": true },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "تحقيق العدالة" }
+    },
+    {
+        "question": "ما هو مفهوم \"القانون الجنائي\"؟",
+        "answers": [
+            { "text": "القوانين التي تحكم الجرائم", "correct": true },
+            { "text": "القوانين التي تحكم العقوبات", "correct": false },
+            { "text": "القوانين التي تحكم الإجراءات الجنائية", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "القوانين التي تحكم الجرائم" }
+    },
+    {
+        "question": "ما هي أهمية الشهادات في الإجراءات الجنائية؟",
+        "answers": [
+            { "text": "تقديم الأدلة", "correct": false },
+            { "text": "دعم القضية", "correct": false },
+            { "text": "توضيح الحقائق", "correct": false },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "ما هو مفهوم \"المحاكمة الجنائية\"؟",
+        "answers": [
+            { "text": "المحاكمة التي تتعلق بالجرائم", "correct": true },
+            { "text": "المحاكمة التي تتعلق بالحقوق المدنية", "correct": false },
+            { "text": "المحاكمة التي تتعلق بالاستئناف", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "المحاكمة التي تتعلق بالجرائم" }
+    },
+    {
+        "question": "ما هو دور المتهم في المحكمة؟",
+        "answers": [
+            { "text": "تقديم الشهادات", "correct": false },
+            { "text": "الدفاع عن نفسه", "correct": true },
+            { "text": "جمع الأدلة", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الدفاع عن نفسه" }
+    },
+    {
+        "question": "ما هي الإجراءات التي تتبع بعد جمع الأدلة؟",
+        "answers": [
+            { "text": "المحاكمة", "correct": true },
+            { "text": "الاستئناف", "correct": false },
+            { "text": "التحقيق", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "المحاكمة" }
+    },
+    {
+        "question": "ما هو مفهوم \"الجرائم البسيطة\"؟",
+        "answers": [
+            { "text": "الجرائم التي لا تحتاج إلى تحقيق", "correct": false },
+            { "text": "الجرائم التي تتطلب تحقيقات معقدة", "correct": false },
+            { "text": "الجرائم التي تكون عقوبتها خفيفة", "correct": true },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الجرائم التي تكون عقوبتها خفيفة" }
+    },
+    {
+        "question": "ما هو دور الشهود في المحاكمة؟",
+        "answers": [
+            { "text": "تقديم الأدلة", "correct": false },
+            { "text": "إبداء الشهادات", "correct": true },
+            { "text": "توقيع العقوبات", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "إبداء الشهادات" }
+    },
+    {
+        "question": "ما هي المرحلة التي تتبع التحقيق الابتدائي؟",
+        "answers": [
+            { "text": "المحاكمة", "correct": true },
+            { "text": "جمع الأدلة", "correct": false },
+            { "text": "الاستئناف", "correct": false },
+            { "text": "الحكم", "correct": false }
+        ],
+        "correctAnswer": { "text": "المحاكمة" }
+    },
+    {
+        "question": "ما هو الهدف من استئناف الحكم؟",
+        "answers": [
+            { "text": "تغيير الحكم الصادر", "correct": true },
+            { "text": "إعادة التحقيق", "correct": false },
+            { "text": "جمع الأدلة مرة أخرى", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "تغيير الحكم الصادر" }
+    },
+    {
+        "question": "ما هو مصطلح \"الحق في الاستئناف\"؟",
+        "answers": [
+            { "text": "حق المتهم في الطعن على الحكم", "correct": true },
+            { "text": "حق الضحية في الطعن على الحكم", "correct": false },
+            { "text": "حق النيابة العامة في الطعن", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "حق المتهم في الطعن على الحكم" }
+    },
+    {
+        "question": "ما هو الدور الرئيسي للشرطة في الإجراءات الجنائية؟",
+        "answers": [
+            { "text": "التحقيق في الجرائم", "correct": true },
+            { "text": "جمع الأدلة", "correct": false },
+            { "text": "تنفيذ الأحكام", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "التحقيق في الجرائم" }
+    }
+        ];
+
+        questions.sort(() => Math.random() - 0.5);
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = questions[currentQuestionIndex];
+            const questionElement = document.createElement('div');
+            questionElement.classList.add('question');
+            questionElement.innerText = currentQuestion.question;
+            questionContainer.appendChild(questionElement);
+
+            currentQuestion.answers.sort(() => Math.random() - 0.5);
+
+            currentQuestion.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.innerText = answer.text;
+                button.classList.add('answer');
+                button.addEventListener('click', () => selectAnswer(answer));
+                questionContainer.appendChild(button);
+            });
+
+            questionCountDisplay.innerText = `السؤال ${currentQuestionIndex + 1} من ${questions.length}`;
+        }
+
+        function resetState() {
+            nextButton.style.display = 'none';
+            questionContainer.innerHTML = '';
+        }
+
+        function selectAnswer(answer) {
+            const currentQuestion = questions[currentQuestionIndex];
+
+            const buttons = document.querySelectorAll('.answer');
+            buttons.forEach(button => {
+                button.disabled = true; // تعطيل الأزرار بعد الاختيار
+            });
+
+            if (answer.correct) {
+                score++;
+                scoreDisplay.innerText = `نتيجة: ${score}`;
+            } else {
+                wrongAnswers.push(currentQuestion);
+            }
+
+            buttons.forEach(button => {
+                if (button.innerText === currentQuestion.correctAnswer.text) {
+                    button.classList.add('correct');
+                } else if (button.innerText === answer.text && !answer.correct) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            nextButton.style.display = 'block';
+        }
+
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        });
+
+        function showResult() {
+            questionContainer.style.display = 'none';
+            nextButton.style.display = 'none';
+            resultContainer.style.display = 'block';
+
+            finalScoreDisplay.innerText = `نتيجتك النهائية: ${score} من ${questions.length}`;
+            resultMessage.innerText = 'انتهى الاختبار!';
+
+            if (wrongAnswers.length > 0) {
+                wrongAnswers.forEach(question => {
+                    const wrongAnswerElement = document.createElement('div');
+                    wrongAnswerElement.classList.add('wrong-answer-question');
+                    wrongAnswerElement.innerHTML = `
+                        <div>${question.question}</div>
+                        <div class="correct-answer">الإجابة الصحيحة: ${question.correctAnswer.text}</div>
+                        <ul>
+                            ${question.answers.map(ans => `<li>${ans.text}</li>`).join('')}
+                        </ul>
+                    `;
+                    wrongAnswersContainer.appendChild(wrongAnswerElement);
+                });
+            } else {
+                wrongAnswersContainer.innerHTML = '<div>لا توجد إجابات خاطئة!</div>';
+            }
+        }
+
+        showQuestion();
+    </script>
+</body>
+</html>

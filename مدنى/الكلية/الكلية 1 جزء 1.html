@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الأسئلة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* منع التمرير العمودي في الجسم */
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex-grow: 1; /* يسمح للحاوية بالنمو لملء المساحة المتاحة */
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* يسمح بالتمرير داخل الحاوية */
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .score {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .question-container {
+            margin-bottom: 20px;
+        }
+
+        .question {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        .answer {
+            display: block;
+            margin: 10px auto;
+            padding: 15px;
+            font-size: 1.2em;
+            background: #e7e7e7;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 80%;
+        }
+
+        .correct {
+            background-color: green;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: red;
+            color: white;
+        }
+
+        .next-button {
+            font-size: 1.5em;
+            background-color: yellow;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            border: 2px solid #ccc;
+        }
+
+        .result-container {
+            display: none;
+        }
+
+        .result-message {
+            font-size: 2em;
+        }
+
+        .final-score {
+            font-size: 1.5em;
+        }
+
+        .wrong-answer-container {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .wrong-answer-question {
+            background-color: #ffe6e6;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 80%;
+            max-width: 400px;
+            border: 1px solid red;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .wrong-answer-question .correct-answer {
+            color: green;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>اختبار الأسئلة</h1>
+        <div id="score" class="score">نتيجة: 0</div>
+        <div id="question-count" class="question-count"></div>
+        <div id="question-container" class="question-container"></div>
+        <button id="next-button" class="next-button" style="display:none;">السؤال التالي</button>
+        <div id="result-container" class="result-container">
+            <div id="result-message" class="result-message"></div>
+            <div id="final-score" class="final-score"></div>
+            <div id="wrong-answers" class="wrong-answer-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const questionContainer = document.getElementById('question-container');
+        const scoreDisplay = document.getElementById('score');
+        const nextButton = document.getElementById('next-button');
+        const questionCountDisplay = document.getElementById('question-count');
+        const resultContainer = document.getElementById('result-container');
+        const resultMessage = document.getElementById('result-message');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const wrongAnswersContainer = document.getElementById('wrong-answers');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let wrongAnswers = [];
+        let questions = [
+        {
+      "question": "ما هو مفهوم الملكية في القانون المدني؟",
+      "answers": [
+        { "text": "الحق في الاستخدام", "correct": false },
+        { "text": "الحق في التصرف", "correct": false },
+        { "text": "الحق في الاستغلال", "correct": false },
+        { "text": "جميع ما سبق", "correct": true }
+      ],
+      "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+      "question": "ما الذي يميز الحقوق العينية؟",
+      "answers": [
+        { "text": "علاقة بين شخصين", "correct": false },
+        { "text": "سلطة مباشرة على شيء معين", "correct": true },
+        { "text": "تعتمد على عقد", "correct": false },
+        { "text": "غير قابلة للنقل", "correct": false }
+      ],
+      "correctAnswer": { "text": "سلطة مباشرة على شيء معين" }
+    },
+    {
+      "question": "ما هي الحقوق الشخصية؟",
+      "answers": [
+        { "text": "سلطة مباشرة على شيء", "correct": true },
+        { "text": "علاقة بين دائِن ومدين", "correct": false },
+        { "text": "حق الملكية", "correct": false },
+        { "text": "حقوق مؤقتة", "correct": false }
+      ],
+      "correctAnswer": { "text": "سلطة مباشرة على شيء" }
+    },
+    {
+      "question": "ما هو الفرق بين الحقوق العينية والحقوق الشخصية؟",
+      "answers": [
+        { "text": "الحقوق العينية تتعلق بشيء معين", "correct": true },
+        { "text": "الحقوق الشخصية هي ملكية", "correct": false },
+        { "text": "الحقوق العينية لا تنتهي", "correct": false },
+        { "text": "الحقوق الشخصية تتعلق بالمال فقط", "correct": false }
+      ],
+      "correctAnswer": { "text": "الحقوق العينية تتعلق بشيء معين" }
+    },
+    {
+      "question": "ما هي الحقوق العينية الأصلية؟",
+      "answers": [
+        { "text": "حقوق تعتمد على حقوق أخرى", "correct": false },
+        { "text": "حقوق تنشأ مستقلة", "correct": true },
+        { "text": "حقوق مؤقتة", "correct": false },
+        { "text": "حقوق غير قابلة للتصرف", "correct": false }
+      ],
+      "correctAnswer": { "text": "حقوق تنشأ مستقلة" }
+    },
+    {
+      "question": "ما هو حق الامتياز؟",
+      "answers": [
+        { "text": "حق الملكية العامة", "correct": false },
+        { "text": "حق ضمان للوفاء بالالتزام", "correct": true },
+        { "text": "حق مؤقت", "correct": false },
+        { "text": "حق في التصرف", "correct": false }
+      ],
+      "correctAnswer": { "text": "حق ضمان للوفاء بالالتزام" }
+    },
+    {
+      "question": "متى يمكن نزع الملكية للمنفعة العامة؟",
+      "answers": [
+        { "text": "عند رغبة الدولة", "correct": true },
+        { "text": "في جميع الأوقات", "correct": false },
+        { "text": "فقط في حالات الطوارئ", "correct": false },
+        { "text": "لا يمكن نزع الملكية", "correct": false }
+      ],
+      "correctAnswer": { "text": "عند رغبة الدولة" }
+    },
+    {
+      "question": "ما هو النظام العام في القانون؟",
+      "answers": [
+        { "text": "مجموعة من القوانين المحلية", "correct": false },
+        { "text": "مصالح عليا للدولة", "correct": true },
+        { "text": "حقوق الأفراد", "correct": false },
+        { "text": "قوانين دولية", "correct": false }
+      ],
+      "correctAnswer": { "text": "مصالح عليا للدولة" }
+    },
+    {
+      "question": "ما هي العناصر الرئيسية للملكية؟",
+      "answers": [
+        { "text": "الاستغلال والتصرف", "correct": true },
+        { "text": "الاستخدام فقط", "correct": false },
+        { "text": "التصرف فقط", "correct": false },
+        { "text": "الاستغلال فقط", "correct": false }
+      ],
+      "correctAnswer": { "text": "الاستغلال والتصرف" }
+    },
+    {
+      "question": "ما هو تعريف الملكية؟",
+      "answers": [
+        { "text": "القدرة على البيع", "correct": false },
+        { "text": "الحق في الاستغلال والتصرف", "correct": true },
+        { "text": "الحق في الاستخدام فقط", "correct": false },
+        { "text": "الملكية العامة فقط", "correct": false }
+      ],
+      "correctAnswer": { "text": "الحق في الاستغلال والتصرف" }
+    },
+    {
+      "question": "ما الذي يميز الحقوق العينية التبعية؟",
+      "answers": [
+        { "text": "تنشأ مستقلة", "correct": false },
+        { "text": "تعتمد على حق آخر", "correct": true },
+        { "text": "حق دائم", "correct": false },
+        { "text": "حق مؤقت", "correct": false }
+      ],
+      "correctAnswer": { "text": "تعتمد على حق آخر" }
+    },
+    {
+      "question": "ما هي دعوة الاستحقاق؟",
+      "answers": [
+        { "text": "دعوة للملكية العامة", "correct": false },
+        { "text": "دعوة لحماية حق الملكية", "correct": true },
+        { "text": "دعوة شخصية", "correct": false },
+        { "text": "دعوة للتعويض", "correct": false }
+      ],
+      "correctAnswer": { "text": "دعوة لحماية حق الملكية" }
+    },
+    {
+      "question": "ما هو مفهوم الحقوق العائلية الأصيلة؟",
+      "answers": [
+        { "text": "حقوق خاصة بالأسرة", "correct": false },
+        { "text": "حقوق تتعلق بالملكية فقط", "correct": false },
+        { "text": "حقوق تتعلق بالزواج والعائلة", "correct": true },
+        { "text": "حقوق مالية", "correct": false }
+      ],
+      "correctAnswer": { "text": "حقوق تتعلق بالزواج والعائلة" }
+    },
+    {
+      "question": "ما هي حدود الملكية في القانون المدني؟",
+      "answers": [
+        { "text": "لا توجد حدود", "correct": false },
+        { "text": "في حدود القانون", "correct": true },
+        { "text": "تعتمد على رغبة المالك", "correct": false },
+        { "text": "تعتمد على نوع الملكية", "correct": false }
+      ],
+      "correctAnswer": { "text": "في حدود القانون" }
+    },
+    {
+      "question": "متى يعتبر العقد باطلاً؟",
+      "answers": [
+        { "text": "عندما يكون مخالفاً للنظام العام", "correct": true },
+        { "text": "عندما يكون مكتوباً", "correct": false },
+        { "text": "عندما يكون شفاهياً", "correct": false },
+        { "text": "عندما يتم توقيعه", "correct": false }
+      ],
+      "correctAnswer": { "text": "عندما يكون مخالفاً للنظام العام" }
+    },
+    {
+      "question": "ما هو حق التصرف في الملكية؟",
+      "answers": [
+        { "text": "الحق في الاستعمال فقط", "correct": false },
+        { "text": "الحق في البيع والنقل", "correct": true },
+        { "text": "الحق في الإيجار فقط", "correct": false },
+        { "text": "الحق في الاستخدام فقط", "correct": false }
+      ],
+      "correctAnswer": { "text": "الحق في البيع والنقل" }
+    },
+    {
+      "question": "ما هي شروط كسب الملكية بالتقادم؟",
+      "answers": [
+        { "text": "عدم وجود نزاع", "correct": false },
+        { "text": "مرور فترة زمنية محددة", "correct": true },
+        { "text": "وجود عقد مكتوب", "correct": false },
+        { "text": "كافة ما سبق", "correct": false }
+      ],
+      "correctAnswer": { "text": "مرور فترة زمنية محددة" }
+    },
+    {
+      "question": "ما هي حقوق الارتفاق؟",
+      "answers": [
+        { "text": "حقوق مشتركة بين الجيران", "correct": false },
+        { "text": "حقوق تتعلق بالمرور", "correct": true },
+        { "text": "حقوق تتعلق بالملكية العامة", "correct": false },
+        { "text": "حقوق مالية", "correct": false }
+      ],
+      "correctAnswer": { "text": "حقوق تتعلق بالمرور" }
+    },
+    {
+      "question": "ما هو الفرق بين الثمار الطبيعية والثمار المستحدثة؟",
+      "answers": [
+        { "text": "الثمار الطبيعية تنشأ بدون تدخل بشري", "correct": true },
+        { "text": "الثمار المستحدثة تكون دائمة", "correct": false },
+        { "text": "الثمار الطبيعية تتطلب زراعة", "correct": false },
+        { "text": "لا يوجد فرق", "correct": false }
+      ],
+      "correctAnswer": { "text": "الثمار الطبيعية تنشأ بدون تدخل بشري" }
+    },
+    {
+      "question": "ما هي حقوق الملكية العامة؟",
+      "answers": [
+        { "text": "حقوق خاصة فقط", "correct": false },
+        { "text": "حقوق تتعلق بمصلحة المجتمع", "correct": true },
+        { "text": "حقوق محدودة", "correct": false },
+        { "text": "حقوق تتعلق بالأفراد فقط", "correct": false }
+      ],
+      "correctAnswer": { "text": "حقوق تتعلق بمصلحة المجتمع" }
+    },
+    {
+      "question": "ما هي القيود القانونية على حق الملكية؟",
+      "answers": [
+        { "text": "لا يوجد قيود", "correct": false },
+        { "text": "قيود تفرضها الدولة", "correct": true },
+        { "text": "قيود يتم تحديدها من قبل المالك", "correct": false },
+        { "text": "قيود على الملكية العامة فقط", "correct": false }
+      ],
+      "correctAnswer": { "text": "قيود تفرضها الدولة" }
+    },
+    {
+      "question": "ما هي العناصر التي تتكون منها الحقوق الشخصية؟",
+      "answers": [
+        { "text": "دائِن ومدين ومحل", "correct": true },
+        { "text": "منتج ومالي", "correct": false },
+        { "text": "حقوق مالية فقط", "correct": false },
+        { "text": "حقوق اجتماعية فقط", "correct": false }
+      ],
+      "correctAnswer": { "text": "دائِن ومدين ومحل" }
+    },
+    {
+      "question": "كيف يتم إثبات ملكية الأرض في حالة النزاع؟",
+      "answers": [
+        { "text": "بناءً على شهادة الشهود", "correct": false },
+        { "text": "من خلال الملكية السابقة", "correct": true },
+        { "text": "بناءً على الشراء فقط", "correct": false },
+        { "text": "لا يمكن إثبات الملكية", "correct": false }
+      ],
+      "correctAnswer": { "text": "من خلال الملكية السابقة" }
+    },
+    {
+      "question": "ما هي الآثار القانونية لنزع الملكية؟",
+      "answers": [
+        { "text": "لا توجد آثار", "correct": false },
+        { "text": "تعويض المالك", "correct": true },
+        { "text": "فقدان الملكية فقط", "correct": false },
+        { "text": "نقل الملكية دون تعويض", "correct": false }
+      ],
+      "correctAnswer": { "text": "تعويض المالك" }
+    },
+    {
+      "question": "ما هي شروط الملكية العقارية الخاصة؟",
+      "answers": [
+        { "text": "يجب أن تكون قانونية", "correct": false },
+        { "text": "يجب أن تكون دائمة", "correct": true },
+        { "text": "يجب أن تكون مؤقتة", "correct": false },
+        { "text": "يجب أن تكون مشتركة", "correct": false }
+      ],
+      "correctAnswer": { "text": "يجب أن تكون دائمة" }
+    },
+    {
+      "question": "ما هو مفهوم الملكية المشتركة؟",
+      "answers": [
+        { "text": "ملكية مفرزة", "correct": false },
+        { "text": "ملكية تعود لأكثر من شخص", "correct": true },
+        { "text": "ملكية عامة فقط", "correct": false },
+        { "text": "ملكية مؤقتة", "correct": false }
+      ],
+      "correctAnswer": { "text": "ملكية تعود لأكثر من شخص" }
+    },
+    {
+      "question": "ما هي القيود الاتفاقية على الملكية؟",
+      "answers": [
+        { "text": "لا تسقط بعدم الاستعمال", "correct": true },
+        { "text": "تسقط بعد مرور 5 سنوات", "correct": false },
+        { "text": "تسقط عندما يرغب المالك", "correct": false },
+        { "text": "تسقط بموافقة جميع الأطراف", "correct": false }
+      ],
+      "correctAnswer": { "text": "لا تسقط بعدم الاستعمال" }
+    },
+    {
+      "question": "ما هو مفهوم الاستيلاء المؤقت؟",
+      "answers": [
+        { "text": "استيلاء دائم", "correct": false },
+        { "text": "استيلاء لأغراض عامة لفترة محددة", "correct": true },
+        { "text": "استيلاء غير قانوني", "correct": false },
+        { "text": "استيلاء بدون تعويض", "correct": false }
+      ],
+      "correctAnswer": { "text": "استيلاء لأغراض عامة لفترة محددة" }
+    },
+    {
+      "question": "كيف يتم حماية حقوق الملكية من التعدي؟",
+      "answers": [
+        { "text": "بإجراءات قانونية", "correct": true },
+        { "text": "بالتفاوض فقط", "correct": false },
+        { "text": "لا يمكن حمايتها", "correct": false },
+        { "text": "بإجراءات غير قانونية", "correct": false }
+      ],
+      "correctAnswer": { "text": "بإجراءات قانونية" }
+    },
+    {
+      "question": "ما هي الحقوق التي يملكها مالك الأرض بالنسبة لما تحتها؟",
+      "answers": [
+        { "text": "لا يملك شيئاً", "correct": false },
+        { "text": "يملك ما تحتها", "correct": true },
+        { "text": "يملك فقط ما فوقها", "correct": false },
+        { "text": "يملك فقط ما ينمو فوقها", "correct": false }
+      ],
+      "correctAnswer": { "text": "يملك ما تحتها" }
+    },
+    {
+      "question": "ما هو مفهوم الحقوق العينية الأصلية؟",
+      "answers": [
+        { "text": "حقوق تعتمد على حقوق أخرى", "correct": false },
+        { "text": "حقوق تنشأ بشكل مستقل", "correct": true },
+        { "text": "حقوق مؤقتة", "correct": false },
+        { "text": "حقوق تتعلق بالديون", "correct": false }
+      ],
+      "correctAnswer": { "text": "حقوق تنشأ بشكل مستقل" }
+    },
+    {
+      "question": "ما هي الأهمية القانونية لحق الملكية؟",
+      "answers": [
+        { "text": "ضمان استقرار الملكية", "correct": true },
+        { "text": "منع الملكية العامة", "correct": false },
+        { "text": "زيادة الضرائب", "correct": false },
+        { "text": "تقليل الحقوق الشخصية", "correct": false }
+      ],
+      "correctAnswer": { "text": "ضمان استقرار الملكية" }
+    },
+    {
+      "question": "ما هي الحقوق العينية التبعية؟",
+      "answers": [
+        { "text": "حقوق مستقلة", "correct": false },
+        { "text": "حقوق تعتمد على حق آخر", "correct": true },
+        { "text": "حقوق دائمة", "correct": false },
+        { "text": "حقوق موقتة", "correct": false }
+      ],
+      "correctAnswer": { "text": "حقوق تعتمد على حق آخر" }
+    },
+    {
+      "question": "ما هو حق الرهن؟",
+      "answers": [
+        { "text": "حق مؤقت", "correct": false },
+        { "text": "حق ضمان للوفاء بالديون", "correct": true },
+        { "text": "حق ملكية عامة", "correct": false },
+        { "text": "حق غير قانوني", "correct": false }
+      ],
+      "correctAnswer": { "text": "حق ضمان للوفاء بالديون" }
+    },
+    {
+      "question": "ما هي العلاقة بين الحقوق العينية والحقوق الشخصية؟",
+      "answers": [
+        { "text": "لا يوجد علاقة", "correct": false },
+        { "text": "الحقوق العينية تتعلق بالملكية، بينما الحقوق الشخصية تتعلق بالعلاقات", "correct": true },
+        { "text": "الحقوق الشخصية تفضل الحقوق العينية", "correct": false },
+        { "text": "الحقوق العينية أوسع من الحقوق الشخصية", "correct": false }
+      ],
+      "correctAnswer": { "text": "الحقوق العينية تتعلق بالملكية، بينما الحقوق الشخصية تتعلق بالعلاقات" }
+    },
+    {
+      "question": "ما هو مفهوم الملكية المشتركة؟",
+      "answers": [
+        { "text": "ملكية تعود لشخص واحد", "correct": false },
+        { "text": "ملكية تتوزع بين عدة أشخاص", "correct": true },
+        { "text": "ملكية عامة فقط", "correct": false },
+        { "text": "ملكية مؤقتة", "correct": false }
+      ],
+      "correctAnswer": { "text": "ملكية تتوزع بين عدة أشخاص" }
+    },
+    {
+      "question": "متى يعتبر العقد غير قانوني؟",
+      "answers": [
+        { "text": "عندما يكون مكتوباً", "correct": false },
+        { "text": "عندما يتعارض مع النظام العام", "correct": true },
+        { "text": "عندما يتم التوقيع عليه", "correct": false },
+        { "text": "عندما يكون شفاهياً", "correct": false }
+      ],
+      "correctAnswer": { "text": "عندما يتعارض مع النظام العام" }
+    },
+    {
+      "question": "ما هو حق الاستغلال في الملكية؟",
+      "answers": [
+        { "text": "الحق في الاستخدام فقط", "correct": false },
+        { "text": "الحق في استثمار الملكية", "correct": true },
+        { "text": "الحق في البيع فقط", "correct": false },
+        { "text": "الحق في الإيجار فقط", "correct": false }
+      ],
+      "correctAnswer": { "text": "الحق في استثمار الملكية" }
+    },
+    {
+      "question": "ما هو الفرق بين الملكية العامة والملكية الخاصة؟",
+      "answers": [
+        { "text": "الملكية العامة تعود للدولة", "correct": true },
+        { "text": "الملكية الخاصة تعود للجميع", "correct": false },
+        { "text": "الملكية العامة غير قابلة للتصرف", "correct": false },
+        { "text": "الملكية الخاصة غير قانونية", "correct": false }
+      ],
+      "correctAnswer": { "text": "الملكية العامة تعود للدولة" }
+    },
+    {
+      "question": "ما هي أنواع الملكية؟",
+      "answers": [
+        { "text": "ملكية خاصة وعامة", "correct": true },
+        { "text": "ملكية مشتركة فقط", "correct": false },
+        { "text": "ملكية مؤقتة فقط", "correct": false },
+        { "text": "ملكية دائمة فقط", "correct": false }
+      ],
+      "correctAnswer": { "text": "ملكية خاصة وعامة" }
+    },
+    {
+      "question": "ما هي حقوق الحفظ؟",
+      "answers": [
+        { "text": "حقوق تابعة للملكية العامة", "correct": false },
+        { "text": "حقوق تابعة للديون", "correct": true },
+        { "text": "حقوق مؤقتة", "correct": false },
+        { "text": "حقوق سارية المفعول فقط", "correct": false }
+      ],
+      "correctAnswer": { "text": "حقوق تابعة للديون" }
+    },
+    {
+      "question": "ما هو مفهوم حق الانتفاع؟",
+      "answers": [
+        { "text": "حق التصرف فقط", "correct": false },
+        { "text": "حق استخدام شيء معين", "correct": true },
+        { "text": "حق غير قابل للنقل", "correct": false },
+        { "text": "حق دائم", "correct": false }
+      ],
+      "correctAnswer": { "text": "حق استخدام شيء معين" }
+    },
+    {
+      "question": "ما هي الآثار القانونية للملكية؟",
+      "answers": [
+        { "text": "التصرف فقط", "correct": false },
+        { "text": "الاستغلال فقط", "correct": false },
+        { "text": "الاستخدام والتصرف", "correct": true },
+        { "text": "لا آثار قانونية", "correct": false }
+      ],
+      "correctAnswer": { "text": "الاستخدام والتصرف" }
+    },
+    {
+      "question": "ما هو حق الاستغلال في الملكية؟",
+      "answers": [
+        { "text": "الحق في التصرف فقط", "correct": false },
+        { "text": "الحق في تأجير الملكية", "correct": true },
+        { "text": "الحق في الاستخدام فقط", "correct": false },
+        { "text": "الحق في البيع فقط", "correct": false }
+      ],
+      "correctAnswer": { "text": "الحق في تأجير الملكية" }
+    },
+    {
+      "question": "ما هي شروط الملكية العقارية؟",
+      "answers": [
+        { "text": "يجب أن تكون قانونية", "correct": true },
+        { "text": "يجب أن تكون مؤقتة", "correct": false },
+        { "text": "يجب أن تكون مشتركة", "correct": false },
+        { "text": "يجب أن تكون موروثة", "correct": false }
+      ],
+      "correctAnswer": { "text": "يجب أن تكون قانونية" }
+    },
+    {
+      "question": "ما هو الفرق بين الملكية المطلقة والملكية المقيدة؟",
+      "answers": [
+        { "text": "الملكية المطلقة لا قيود عليها", "correct": true },
+        { "text": "الملكية المقيدة لا تعود للمالك", "correct": false },
+        { "text": "الملكية المطلقة لا يمكن نقلها", "correct": false },
+        { "text": "الملكية المقيدة تعود للدولة", "correct": false }
+      ],
+      "correctAnswer": { "text": "الملكية المطلقة لا قيود عليها" }
+    },
+    {
+      "question": "ما هي الشروط اللازمة لكسب الملكية بالتقادم؟",
+      "answers": [
+        { "text": "عدم وجود نزاع", "correct": false },
+        { "text": "مرور فترة زمنية محددة", "correct": true },
+        { "text": "وجود عقد مكتوب", "correct": false },
+        { "text": "كافة ما سبق", "correct": false }
+      ],
+      "correctAnswer": { "text": "مرور فترة زمنية محددة" }
+    },
+    {
+      "question": "ما هو مفهوم الملكية في القانون؟",
+      "answers": [
+        { "text": "القدرة على البيع فقط", "correct": false },
+        { "text": "الحق في الاستغلال والتصرف", "correct": true },
+        { "text": "الحق في الاستخدام فقط", "correct": false },
+        { "text": "الملكية العامة فقط", "correct": false }
+      ],
+      "correctAnswer": { "text": "الحق في الاستغلال والتصرف" }
+    },
+    {
+      "question": "ما هي العقوبات المترتبة على انتهاك حقوق الملكية؟",
+      "answers": [
+        { "text": "لا توجد عقوبات", "correct": false },
+        { "text": "تعويضات مالية", "correct": true },
+        { "text": "السجن", "correct": false },
+        { "text": "إلغاء الملكية", "correct": false }
+      ],
+      "correctAnswer": { "text": "تعويضات مالية" }
+    },
+    {
+      "question": "ما هو مفهوم حق الملكية في الشريعة الإسلامية؟",
+      "answers": [
+        { "text": "حق دائم وغير مشروط", "correct": false },
+        { "text": "حق مقيد بشروط معينة", "correct": true },
+        { "text": "حق غير قانوني", "correct": false },
+        { "text": "حق ينتقل دون قيود", "correct": false }
+      ],
+      "correctAnswer": { "text": "حق مقيد بشروط معينة" }
+    },
+    {
+      "question": "ما هي الآثار القانونية للملكية المشتركة؟",
+      "answers": [
+        { "text": "حقوق متساوية بين الملاك", "correct": true },
+        { "text": "حقوق غير قابلة للنقل", "correct": false },
+        { "text": "حقوق دائمة", "correct": false },
+        { "text": "حقوق مؤقتة", "correct": false }
+      ],
+      "correctAnswer": { "text": "حقوق متساوية بين الملاك" }
+    },
+    {
+      "question": "ما هو مفهوم القضاء في الملكية؟",
+      "answers": [
+        { "text": "حماية الملكية فقط", "correct": false },
+        { "text": "تطبيق القوانين المتعلقة بالملكية", "correct": true },
+        { "text": "تعزيز الملكية العامة", "correct": false },
+        { "text": "إلغاء الملكية الخاصة", "correct": false }
+      ],
+      "correctAnswer": { "text": "تطبيق القوانين المتعلقة بالملكية" }
+    },
+    {
+      "question": "ما هي حدود الملكية الخاصة مقابل الملكية العامة؟",
+      "answers": [
+        { "text": "الملكية الخاصة لا قيود عليها", "correct": false },
+        { "text": "الملكية العامة تخدم مصلحة المجتمع", "correct": true },
+        { "text": "الملكية العامة تعود للأفراد", "correct": false },
+        { "text": "الملكية الخاصة تتعلق بالدولة", "correct": false }
+      ],
+      "correctAnswer": { "text": "الملكية العامة تخدم مصلحة المجتمع" }
+    },
+    {
+      "question": "ما هي الشروط اللازمة لإنشاء رهن عقاري؟",
+      "answers": [
+        { "text": "وجود عقد مكتوب", "correct": true },
+        { "text": "عدم وجود ضمانات", "correct": false },
+        { "text": "الملكية العامة فقط", "correct": false },
+        { "text": "كافة ما سبق", "correct": false }
+      ],
+      "correctAnswer": { "text": "وجود عقد مكتوب" }
+    },
+    {
+      "question": "ما هو مفهوم الملكية المؤقتة؟",
+      "answers": [
+        { "text": "ملكية لا تنتقل", "correct": false },
+        { "text": "ملكية تنتهي بعد فترة محددة", "correct": true },
+        { "text": "ملكية غير قابلة للتصرف", "correct": false },
+        { "text": "ملكية دائمة", "correct": false }
+      ],
+      "correctAnswer": { "text": "ملكية تنتهي بعد فترة محددة" }
+    },
+    {
+      "question": "ما هي الوسائل القانونية لحماية الملكية؟",
+      "answers": [
+        { "text": "الدعوى القضائية", "correct": true },
+        { "text": "التفاوض فقط", "correct": false },
+        { "text": "لا توجد وسائل", "correct": false },
+        { "text": "الإجراءات غير القانونية", "correct": false }
+      ],
+      "correctAnswer": { "text": "الدعوى القضائية" }
+    },
+    {
+      "question": "كيف يتم تحديد قيمة التعويض عند نزع الملكية؟",
+      "answers": [
+        { "text": "بالتقدير الشخصي", "correct": false },
+        { "text": "بناءً على قيمة السوق", "correct": true },
+        { "text": "بناءً على تقديرات الدولة", "correct": false },
+        { "text": "لا توجد قيمة محددة", "correct": false }
+      ],
+      "correctAnswer": { "text": "بناءً على قيمة السوق" }
+    },
+    {
+      "question": "ما هو مفهوم الملكية العامة في القانون؟",
+      "answers": [
+        { "text": "ملكية خاصة للدولة", "correct": false },
+        { "text": "ملكية تعود للشعب", "correct": true },
+        { "text": "ملكية غير قابلة للتصرف", "correct": false },
+        { "text": "ملكية مؤقتة", "correct": false }
+      ],
+      "correctAnswer": { "text": "ملكية تعود للشعب" }
+    },
+    {
+      "question": "ما هي الشروط اللازمة لكسب الملكية بالتقادم في القوانين المدنية؟",
+      "answers": [
+        { "text": "مرور فترة زمنية معينة وعدم وجود نزاع", "correct": true },
+        { "text": "وجود عقد مكتوب", "correct": false },
+        { "text": "الملكية العامة فقط", "correct": false },
+        { "text": "كافة ما سبق", "correct": false }
+      ],
+      "correctAnswer": { "text": "مرور فترة زمنية معينة وعدم وجود نزاع" }
+    },
+    {
+      "question": "ما هي أنواع الحقوق في القانون المدني؟",
+      "answers": [
+        { "text": "حقوق شخصية وحقوق عينية", "correct": true },
+        { "text": "حقوق عامة وحقوق خاصة", "correct": false },
+        { "text": "حقوق مؤقتة ودائمة", "correct": false },
+        { "text": "حقوق مالية وحقوق غير مالية", "correct": false }
+      ],
+      "correctAnswer": { "text": "حقوق شخصية وحقوق عينية" }
+    }
+        ];
+
+        questions.sort(() => Math.random() - 0.5);
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = questions[currentQuestionIndex];
+            const questionElement = document.createElement('div');
+            questionElement.classList.add('question');
+            questionElement.innerText = currentQuestion.question;
+            questionContainer.appendChild(questionElement);
+
+            currentQuestion.answers.sort(() => Math.random() - 0.5);
+
+            currentQuestion.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.innerText = answer.text;
+                button.classList.add('answer');
+                button.addEventListener('click', () => selectAnswer(answer));
+                questionContainer.appendChild(button);
+            });
+
+            questionCountDisplay.innerText = `السؤال ${currentQuestionIndex + 1} من ${questions.length}`;
+        }
+
+        function resetState() {
+            nextButton.style.display = 'none';
+            questionContainer.innerHTML = '';
+        }
+
+        function selectAnswer(answer) {
+            const currentQuestion = questions[currentQuestionIndex];
+
+            const buttons = document.querySelectorAll('.answer');
+            buttons.forEach(button => {
+                button.disabled = true; // تعطيل الأزرار بعد الاختيار
+            });
+
+            if (answer.correct) {
+                score++;
+                scoreDisplay.innerText = `نتيجة: ${score}`;
+            } else {
+                wrongAnswers.push(currentQuestion);
+            }
+
+            buttons.forEach(button => {
+                if (button.innerText === currentQuestion.correctAnswer.text) {
+                    button.classList.add('correct');
+                } else if (button.innerText === answer.text && !answer.correct) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            nextButton.style.display = 'block';
+        }
+
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        });
+
+        function showResult() {
+            questionContainer.style.display = 'none';
+            nextButton.style.display = 'none';
+            resultContainer.style.display = 'block';
+
+            finalScoreDisplay.innerText = `نتيجتك النهائية: ${score} من ${questions.length}`;
+            resultMessage.innerText = 'انتهى الاختبار!';
+
+            if (wrongAnswers.length > 0) {
+                wrongAnswers.forEach(question => {
+                    const wrongAnswerElement = document.createElement('div');
+                    wrongAnswerElement.classList.add('wrong-answer-question');
+                    wrongAnswerElement.innerHTML = `
+                        <div>${question.question}</div>
+                        <div class="correct-answer">الإجابة الصحيحة: ${question.correctAnswer.text}</div>
+                        <ul>
+                            ${question.answers.map(ans => `<li>${ans.text}</li>`).join('')}
+                        </ul>
+                    `;
+                    wrongAnswersContainer.appendChild(wrongAnswerElement);
+                });
+            } else {
+                wrongAnswersContainer.innerHTML = '<div>لا توجد إجابات خاطئة!</div>';
+            }
+        }
+
+        showQuestion();
+    </script>
+</body>
+</html>
