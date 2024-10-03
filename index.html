@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المجلدات</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            direction: rtl;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        /* الجزء الخاص بالمجلدات */
+        .folders {
+            width: 30%;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-left: 2px solid #ccc;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+            overflow-y: auto;
+        }
+        .folder {
+            width: 100px;
+            height: 100px;
+            margin: 10px 0;
+            background-color: #f0f0f0;
+            border: 2px solid #000;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            word-wrap: break-word;
+        }
+        /* الجزء الخاص بالملفات */
+        .files-section {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        .files {
+            display: none;
+        }
+        .files h2 {
+            font-size: 36px;
+            margin-top: 0;
+            text-align: center;
+        }
+        .file-path {
+            width: 50%;
+            padding: 10px;
+            border: 2px solid #ccc;
+            margin-top: 20px;
+            font-size: 18px;
+            text-align: center;
+            background-color: #f0f0f0;
+            word-wrap: break-word;
+            text-decoration: none;
+            color: black;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .file-path:hover {
+            background-color: #e0e0e0;
+            cursor: pointer;
+        }
+        .divider {
+            width: 2px;
+            background-color: #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- المجلدات -->
+        <div class="folders">
+            <div class="folder" onclick="showFiles('mofara3at')">المرافعات</div>
+            <div class="folder" onclick="showFiles('ijra2at')">الإجراءات الجنائية</div>
+            <div class="folder" onclick="showFiles('madany')">المدني</div>
+            <div class="folder" onclick="showFiles('tanaze3')">التنازع و الاختصاص القضائي</div>
+            <div class="folder" onclick="showFiles('training')">التدريب العملي</div>
+        </div>
+
+        <!-- الفاصل -->
+        <div class="divider"></div>
+
+        <!-- الملفات -->
+        <div class="files-section">
+            <div id="mofara3at" class="files">
+                <h2>المرافعات</h2>
+                <a href="المرافعات/الكورس/المحاضرة الاولى1-30 جزء1.html" class="file-path" style="background-color:orange;">المحاضرة الاولى 1-30 جزء 1</a>
+                <a href="المرافعات/الكورس/المحاضرة الاولى1-30 جزء2.html"class="file-path" style="background-color:orange;">المحاضرة الاولى 1-30 جزء 2</a>
+                <a href="المرافعات/الكورس/المحاضرة الاولى1-30 جزء3.html" class="file-path" style="background-color:orange;">المحاضرة الاولى 1-30 جزء 3</a>
+                <a href="المرافعات/الكلية/الكلية 1 جزء 1.html" class="file-path" style="background-color:skyblue">الكلية1 جزء 1</a>
+                <a href="المرافعات/الكلية/الكلية 1 جزء 2.html" class="file-path" style="background-color:skyblue">الكلية1 جزء 2</a>
+                <a href="المرافعات/الكلية/الكلية 1 جزء 3.html" class="file-path" style="background-color:skyblue">الكلية1 جزء 3</a>
+            </div>
+
+            <div id="ijra2at" class="files">
+                <h2>الإجراءات الجنائية</h2>
+                <a href="الاجراءات الجنائية/الكورس/المحاضرة الاولى1-23 جزء1.html" class="file-path" style="background-color:orange;">المحاضرة الاولى 1-23 جزء 1</a>
+                <a href="الاجراءات الجنائية/الكورس/المحاضرة الاولى1-23 جزء2.html" class="file-path" style="background-color:orange;">المحاضرة الاولى 1-23 جزء 2</a>
+                <a href="الاجراءات الجنائية/الكورس/المحاضرة الاولى1-23 جزء3.html" class="file-path" style="background-color:orange;">المحاضرة الاولى 1-23 جزء 3</a>
+                <a href="الاجراءات الجنائية/الكلية/الكلية 1 جزء 1.html" class="file-path" style="background-color:skyblue">الكلية 1 جزء 1</a>
+                <a href="الاجراءات الجنائية/الكلية/الكلية 1 جزء 2.html" class="file-path" style="background-color:skyblue">الكلية 1 جزء 2</a>
+                <a href="الاجراءات الجنائية/الكلية/الكلية 1 جزء 3.html" class="file-path" style="background-color:skyblue">الكلية 1 جزء 3</a>
+            </div>
+
+            <div id="madany" class="files">
+                <h2>المدني</h2>
+                <a href="مدنى/الكورس/المحاضرة الاولى1-36 جزء1.html" class="file-path" style="background-color:orange;">المحاضرة الاولى 1-36 جزء 1</a>
+                <a href="مدنى/الكورس/المحاضرة الاولى1-36 جزء2.html" class="file-path" style="background-color:orange;">المحاضرة الاولى 1-36 جزء 2</a>
+                <a href="مدنى/الكورس/المحاضرة الاولى1-36 جزء3.html" class="file-path" style="background-color:orange;">المحاضرة الاولى 1-36 جزء 3</a>
+                <a href="مدنى/الكلية/الكلية 1 جزء 1.html" class="file-path" style="background-color:skyblue">الكلية 1 جزء 1</a>
+                <a href="مدنى/الكلية/الكلية 1 جزء 2.html" class="file-path" style="background-color:skyblue">الكلية 1 جزء 2</a>
+                <a href="مدنى/الكلية/الكلية 1 جزء 3.html" class="file-path" style="background-color:skyblue">الكلية 1 جزء 3</a>
+                
+            </div>
+
+            <div id="tanaze3" class="files">
+                <h2>التنازع و الاختصاص القضائي</h2>
+                <a href="تنازع القوانين/الكورس/المحاضرة الاولى 1-46 جزء1.html" class="file-path" style="background-color:orange;">المحاضرة الاولى 1-46 جزء 1</a>
+                <a href="تنازع القوانين/الكورس/المحاضرة الاولى 1-46 جزء2.html" class="file-path" style="background-color:orange;">المحاضرة الاولى 1-46 جزء 2</a>
+                <a href="تنازع القوانين/الكورس/المحاضرة الاولى 1-46 جزء3.html" class="file-path" style="background-color:orange;">المحاضرة الاولى 1-46 جزء 3</a>
+
+            </div>
+
+            <div id="training" class="files">
+                <h2>التدريب العملي</h2>
+                <a href="" class="file-path"></a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showFiles(folderId) {
+            // إخفاء جميع الملفات
+            const allFiles = document.querySelectorAll('.files');
+            allFiles.forEach(function(filesDiv) {
+                filesDiv.style.display = 'none';
+            });
+
+            // إظهار الملفات الخاصة بالمجلد المختار
+            const folderFiles = document.getElementById(folderId);
+            folderFiles.style.display = 'block';
+
+            // تعديل اسم المستطيل إذا كان الملف هو index.html
+            const fileLinks = folderFiles.querySelectorAll('.file-path');
+            fileLinks.forEach(function(link) {
+                if (link.href.includes('index.html')) {
+                    link.textContent = 'index';
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>
