@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الأسئلة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* منع التمرير العمودي في الجسم */
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex-grow: 1; /* يسمح للحاوية بالنمو لملء المساحة المتاحة */
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* يسمح بالتمرير داخل الحاوية */
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .score {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .question-container {
+            margin-bottom: 20px;
+        }
+
+        .question {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        .answer {
+            display: block;
+            margin: 10px auto;
+            padding: 15px;
+            font-size: 1.2em;
+            background: #e7e7e7;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 80%;
+        }
+
+        .correct {
+            background-color: green;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: red;
+            color: white;
+        }
+
+        .next-button {
+            font-size: 1.5em;
+            background-color: yellow;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            border: 2px solid #ccc;
+        }
+
+        .result-container {
+            display: none;
+        }
+
+        .result-message {
+            font-size: 2em;
+        }
+
+        .final-score {
+            font-size: 1.5em;
+        }
+
+        .wrong-answer-container {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .wrong-answer-question {
+            background-color: #ffe6e6;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 80%;
+            max-width: 400px;
+            border: 1px solid red;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .wrong-answer-question .correct-answer {
+            color: green;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>اختبار الأسئلة</h1>
+        <div id="score" class="score">نتيجة: 0</div>
+        <div id="question-count" class="question-count"></div>
+        <div id="question-container" class="question-container"></div>
+        <button id="next-button" class="next-button" style="display:none;">السؤال التالي</button>
+        <div id="result-container" class="result-container">
+            <div id="result-message" class="result-message"></div>
+            <div id="final-score" class="final-score"></div>
+            <div id="wrong-answers" class="wrong-answer-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const questionContainer = document.getElementById('question-container');
+        const scoreDisplay = document.getElementById('score');
+        const nextButton = document.getElementById('next-button');
+        const questionCountDisplay = document.getElementById('question-count');
+        const resultContainer = document.getElementById('result-container');
+        const resultMessage = document.getElementById('result-message');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const wrongAnswersContainer = document.getElementById('wrong-answers');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let wrongAnswers = [];
+        let questions = [
+        {
+        "question": "ما هي الشروط الشكلية للسند التنفيذي؟",
+        "answers": [
+            { "text": "وجود توقيع الشهود", "correct": false },
+            { "text": "وجود صورة تنفيذية وصيغة تنفيذ", "correct": true },
+            { "text": "وجود محامٍ", "correct": false },
+            { "text": "وجود صك ملكية", "correct": false }
+        ],
+        "correctAnswer": { "text": "وجود صورة تنفيذية وصيغة تنفيذ" }
+    },
+    {
+        "question": "ما هو الفرق بين الصورة التنفيذية والصورة البسيطة؟",
+        "answers": [
+            { "text": "الصورة التنفيذية ملزمة", "correct": true },
+            { "text": "الصورة البسيطة تعتبر دليلاً فقط", "correct": false },
+            { "text": "الصورة التنفيذية تستخدم للتنفيذ", "correct": true },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "جميع ما سبق" }
+    },
+    {
+        "question": "هل يجوز للخصم الذي تعود عليه منفعة من تنفيذ الحكم أن يحصل على صورة تنفيذية؟",
+        "answers": [
+            { "text": "نعم", "correct": true },
+            { "text": "لا", "correct": false },
+            { "text": "فقط إذا كان محامياً", "correct": false },
+            { "text": "يعتمد على القاضي", "correct": false }
+        ],
+        "correctAnswer": { "text": "نعم" }
+    },
+    {
+        "question": "ما هي القاعدة العامة في تسليم الصورة التنفيذية؟",
+        "answers": [
+            { "text": "تسليمها لأي شخص", "correct": false },
+            { "text": "تسليمها فقط للخصم صاحب المنفعة", "correct": true },
+            { "text": "تسليمها للمحامي", "correct": false },
+            { "text": "تسليمها للقاضي", "correct": false }
+        ],
+        "correctAnswer": { "text": "تسليمها فقط للخصم صاحب المنفعة" }
+    },
+    {
+        "question": "ما هي الحالات التي يستثنى فيها من الشرطين الشكلين للسند التنفيذي؟",
+        "answers": [
+            { "text": "الأحكام الاستئنافية", "correct": false },
+            { "text": "الأحكام المستعجلة", "correct": true },
+            { "text": "الأحكام الابتدائية", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الأحكام المستعجلة" }
+    },
+    {
+        "question": "ماذا يحدث إذا تم التنفيذ بموجب سند لم يستوف الشكل؟",
+        "answers": [
+            { "text": "يكون صحيحاً", "correct": false },
+            { "text": "يعد باطلاً", "correct": true },
+            { "text": "يعتمد على القاضي", "correct": false },
+            { "text": "يمكن تصحيحه لاحقاً", "correct": false }
+        ],
+        "correctAnswer": { "text": "يعد باطلاً" }
+    },
+    {
+        "question": "ما هي الأحكام التي لا يجوز تنفيذها؟",
+        "answers": [
+            { "text": "الأحكام الابتدائية", "correct": false },
+            { "text": "الأحكام الغير نافذة", "correct": true },
+            { "text": "الأحكام النهائية", "correct": false },
+            { "text": "الأحكام المستعجلة", "correct": false }
+        ],
+        "correctAnswer": { "text": "الأحكام الغير نافذة" }
+    },
+    {
+        "question": "ما هي مسؤولية معاون التنفيذ عند تقديم الصورة التنفيذية؟",
+        "answers": [
+            { "text": "إجرائها دون تفكير", "correct": false },
+            { "text": "الالتزام بإجراء التنفيذ", "correct": true },
+            { "text": "مراجعة السند", "correct": false },
+            { "text": "إلغاء الصورة", "correct": false }
+        ],
+        "correctAnswer": { "text": "الالتزام بإجراء التنفيذ" }
+    },
+    {
+        "question": "ما هو النص الذي يحدد حالات الإعفاء من المبدأ العام في التنفيذ؟",
+        "answers": [
+            { "text": "المادة 280", "correct": false },
+            { "text": "المادة 286", "correct": true },
+            { "text": "المادة 100", "correct": false },
+            { "text": "المادة 99", "correct": false }
+        ],
+        "correctAnswer": { "text": "المادة 286" }
+    },
+    {
+        "question": "ما هو الحكم الذي يجب أن يُستنفذ قبل البدء في التنفيذ؟",
+        "answers": [
+            { "text": "الحكم الابتدائي", "correct": false },
+            { "text": "الحكم النهائي", "correct": true },
+            { "text": "الحكم الاستئنافي", "correct": false },
+            { "text": "الحكم المشروط", "correct": false }
+        ],
+        "correctAnswer": { "text": "الحكم النهائي" }
+    },
+    {
+        "question": "ما هو النص القانوني الذي يحدد الحالات التي يمكن فيها تنفيذ الحكم بموجب مسودته؟",
+        "answers": [
+            { "text": "المادة 99", "correct": false },
+            { "text": "المادة 100", "correct": false },
+            { "text": "المادة 286", "correct": true },
+            { "text": "المادة 280", "correct": false }
+        ],
+        "correctAnswer": { "text": "المادة 286" }
+    },
+    {
+        "question": "كيف يتم إثبات مضمون السند التنفيذي إذا فقد أصله؟",
+        "answers": [
+            { "text": "بواسطة الشهود", "correct": false },
+            { "text": "بواسطة الصور الفوتوغرافية", "correct": false },
+            { "text": "بكافة طرق الإثبات", "correct": true },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "بكافة طرق الإثبات" }
+    },
+    {
+        "question": "ما هو الجزاء المترتب على تخلف الصيغة التنفيذية؟",
+        "answers": [
+            { "text": "بطلان السند", "correct": false },
+            { "text": "بطلان التنفيذ", "correct": true },
+            { "text": "استحالة التنفيذ", "correct": false },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "بطلان التنفيذ" }
+    },
+    {
+        "question": "في أي حالة يجوز للقاضي إصدار أمر بتنفيذ الحكم؟",
+        "answers": [
+            { "text": "عند عدم الطعن", "correct": true },
+            { "text": "عند طلب الخصم", "correct": false },
+            { "text": "في حالة وجود نزاع", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "عند عدم الطعن" }
+    },
+    {
+        "question": "ما هي المدة التي يمكن فيها للخصم تقديم طلب للحصول على الصورة التنفيذية؟",
+        "answers": [
+            { "text": "30 يوماً", "correct": false },
+            { "text": "60 يوماً", "correct": false },
+            { "text": "بعد صدور الحكم", "correct": true },
+            { "text": "في أي وقت", "correct": false }
+        ],
+        "correctAnswer": { "text": "بعد صدور الحكم" }
+    },
+    {
+        "question": "هل يمكن استخدام الصورة التنفيذية كدليل إثبات؟",
+        "answers": [
+            { "text": "نعم", "correct": false },
+            { "text": "لا", "correct": true },
+            { "text": "فقط في بعض الحالات", "correct": false },
+            { "text": "يعتمد على القاضي", "correct": false }
+        ],
+        "correctAnswer": { "text": "لا" }
+    },
+    {
+        "question": "ما هي الحالات التي يجوز فيها استخراج صورة تنفيذية ثانية؟",
+        "answers": [
+            { "text": "في حالة ضياع الصورة الأولى", "correct": true },
+            { "text": "في حالة عدم وجود صورة تنفيذية", "correct": false },
+            { "text": "في حالة عدم رضا المدين", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "في حالة ضياع الصورة الأولى" }
+    },
+    {
+        "question": "ما هو النص القانوني الذي ينظم تسليم الصورة التنفيذية؟",
+        "answers": [
+            { "text": "المادة 181", "correct": false },
+            { "text": "المادة 280", "correct": true },
+            { "text": "المادة 286", "correct": false },
+            { "text": "المادة 99", "correct": false }
+        ],
+        "correctAnswer": { "text": "المادة 280" }
+    },
+    {
+        "question": "ما هو السند التنفيذي الذي يملك القوة التنفيذية؟",
+        "answers": [
+            { "text": "كل سند قانوني", "correct": false },
+            { "text": "الأحكام والأوامر", "correct": true },
+            { "text": "السندات المالية", "correct": false },
+            { "text": "لا شيء مما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "الأحكام والأوامر" }
+    },
+    {
+        "question": "هل يجوز للمدين تقديم طلب بإلغاء الصورة التنفيذية؟",
+        "answers": [
+            { "text": "نعم", "correct": false },
+            { "text": "لا", "correct": true },
+            { "text": "فقط في المحكمة", "correct": false },
+            { "text": "يعتمد على القاضي", "correct": false }
+        ],
+        "correctAnswer": { "text": "لا" }
+    },
+    {
+        "question": "ما هو دور القاضي في تسليم الصورة التنفيذية؟",
+        "answers": [
+            { "text": "إصدار الأحكام", "correct": false },
+            { "text": "مراجعة الصورة التنفيذية", "correct": false },
+            { "text": "إصدار أوامر بتسليم الصور", "correct": true },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "إصدار أوامر بتسليم الصور" }
+    },
+    {
+        "question": "هل يمكن تقديم طلب للحصول على صورة تنفيذية من خلال محامٍ؟",
+        "answers": [
+            { "text": "نعم", "correct": true },
+            { "text": "لا", "correct": false },
+            { "text": "فقط إذا كان المحامي متعاقداً", "correct": false },
+            { "text": "يعتمد على القاضي", "correct": false }
+        ],
+        "correctAnswer": { "text": "نعم" }
+    },
+    {
+        "question": "ما هو الحكم الذي يستوجب وجود صيغة تنفيذية؟",
+        "answers": [
+            { "text": "كل الأحكام", "correct": true },
+            { "text": "الأحكام الاستئنافية فقط", "correct": false },
+            { "text": "الأحكام الابتدائية فقط", "correct": false },
+            { "text": "الأحكام المؤجلة", "correct": false }
+        ],
+        "correctAnswer": { "text": "كل الأحكام" }
+    },
+    {
+        "question": "ما هو النص الذي يشير إلى الشروط الشكلية للسند التنفيذي؟",
+        "answers": [
+            { "text": "المادة 180", "correct": false },
+            { "text": "المادة 280", "correct": true },
+            { "text": "المادة 286", "correct": false },
+            { "text": "المادة 100", "correct": false }
+        ],
+        "correctAnswer": { "text": "المادة 280" }
+    },
+    {
+        "question": "هل يجوز للمدين الحصول على صورة تنفيذية؟",
+        "answers": [
+            { "text": "نعم، في حالة واحدة", "correct": false },
+            { "text": "لا، إلا إذا كان محامياً", "correct": true },
+            { "text": "لا، إلا بموافقة الدائن", "correct": false },
+            { "text": "يعتمد على القاضي", "correct": false }
+        ],
+        "correctAnswer": { "text": "لا، إلا إذا كان محامياً" }
+    },
+    {
+        "question": "ما هي العواقب المترتبة على عدم تقديم الصورة التنفيذية؟",
+        "answers": [
+            { "text": "بطلان السند", "correct": false },
+            { "text": "عدم إمكانية التنفيذ", "correct": true },
+            { "text": "إمكانية الطعن", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "عدم إمكانية التنفيذ" }
+    },
+    {
+        "question": "ما هي المدة التي يجب على الخصم تقديم طلب الصورة التنفيذية خلالها بعد صدور الحكم؟",
+        "answers": [
+            { "text": "30 يوماً", "correct": false },
+            { "text": "60 يوماً", "correct": false },
+            { "text": "90 يوماً", "correct": false },
+            { "text": "أي وقت", "correct": true }
+        ],
+        "correctAnswer": { "text": "أي وقت" }
+    },
+    {
+        "question": "ما هي القاعدة العامة بشأن استخراج الصورة التنفيذية؟",
+        "answers": [
+            { "text": "يمكن استخراج أكثر من صورة", "correct": false },
+            { "text": "يجب استخراج صورة واحدة فقط", "correct": true },
+            { "text": "يمكن استخراج صورة واحدة لكل خصم", "correct": false },
+            { "text": "لا توجد قاعدة", "correct": false }
+        ],
+        "correctAnswer": { "text": "يجب استخراج صورة واحدة فقط" }
+    },
+    {
+        "question": "هل يمكن استخدام صورة تنفيذية كدليل قانوني؟",
+        "answers": [
+            { "text": "نعم", "correct": false },
+            { "text": "لا", "correct": true },
+            { "text": "في حالات معينة", "correct": false },
+            { "text": "يعتمد على القاضي", "correct": false }
+        ],
+        "correctAnswer": { "text": "لا" }
+    },
+    {
+        "question": "ما هي الحالات التي يمكن فيها للمدين الحصول على صورة تنفيذية؟",
+        "answers": [
+            { "text": "إذا كان لديه حق في التنفيذ", "correct": true },
+            { "text": "إذا كان لديه محامي", "correct": false },
+            { "text": "إذا كان الحكم نهائي", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "إذا كان لديه حق في التنفيذ" }
+    },
+    {
+        "question": "ما هي الإجراءات المتبعة عند عدم تسليم الصورة التنفيذية للخصم؟",
+        "answers": [
+            { "text": "تقديم شكوى للقاضي", "correct": true },
+            { "text": "الانتظار", "correct": false },
+            { "text": "تقديم دعوى جديدة", "correct": false },
+            { "text": "لا شيء", "correct": false }
+        ],
+        "correctAnswer": { "text": "تقديم شكوى للقاضي" }
+    },
+    {
+        "question": "ما هو الأثر القانوني لعدم وجود صيغة تنفيذية في السند؟",
+        "answers": [
+            { "text": "يصبح السند باطلاً", "correct": true },
+            { "text": "يمكن تنفيذه", "correct": false },
+            { "text": "يعتمد على القاضي", "correct": false },
+            { "text": "لا شيء", "correct": false }
+        ],
+        "correctAnswer": { "text": "يصبح السند باطلاً" }
+    },
+    {
+        "question": "هل يمكن الاعتماد على صورة فوتوغرافية للسند التنفيذي؟",
+        "answers": [
+            { "text": "نعم", "correct": false },
+            { "text": "لا", "correct": true },
+            { "text": "في بعض الحالات", "correct": false },
+            { "text": "يعتمد على القاضي", "correct": false }
+        ],
+        "correctAnswer": { "text": "لا" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم تسليم الصورة التنفيذية؟",
+        "answers": [
+            { "text": "المادة 181", "correct": true },
+            { "text": "المادة 280", "correct": false },
+            { "text": "المادة 99", "correct": false },
+            { "text": "المادة 100", "correct": false }
+        ],
+        "correctAnswer": { "text": "المادة 181" }
+    },
+    {
+        "question": "ما هي الحالات التي يسمح فيها القانون باستخراج صورة تنفيذية ثانية؟",
+        "answers": [
+            { "text": "في حالة ضياع الصورة الأولى", "correct": true },
+            { "text": "في حالة عدم الرضا", "correct": false },
+            { "text": "في حالة تعديل الحكم", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "في حالة ضياع الصورة الأولى" }
+    },
+    {
+        "question": "ماذا يحدث إذا خالف الموظف المختص إجراءات تسليم الصورة التنفيذية؟",
+        "answers": [
+            { "text": "يتم التحقيق معه", "correct": true },
+            { "text": "لا شيء يحدث", "correct": false },
+            { "text": "يمكن للخصم تقديم شكوى", "correct": false },
+            { "text": "يعتمد على القاضي", "correct": false }
+        ],
+        "correctAnswer": { "text": "يتم التحقيق معه" }
+    },
+    {
+        "question": "ما هي الإجراءات الواجب اتباعها عند فقدان الصورة التنفيذية؟",
+        "answers": [
+            { "text": "تقديم طلب للقاضي", "correct": true },
+            { "text": "الانتظار", "correct": false },
+            { "text": "تقديم شكوى للشرطة", "correct": false },
+            { "text": "لا شيء", "correct": false }
+        ],
+        "correctAnswer": { "text": "تقديم طلب للقاضي" }
+    },
+    {
+        "question": "كيف يتم إثبات مضمون السند التنفيذي عند فقدانه؟",
+        "answers": [
+            { "text": "بواسطة الشهود", "correct": false },
+            { "text": "بواسطة الصور الفوتوغرافية", "correct": false },
+            { "text": "بكافة طرق الإثبات", "correct": true },
+            { "text": "جميع ما سبق", "correct": true }
+        ],
+        "correctAnswer": { "text": "بكافة طرق الإثبات" }
+    },
+    {
+        "question": "هل يمكن استخدام الصورة التنفيذية في دعاوى أخرى؟",
+        "answers": [
+            { "text": "نعم", "correct": false },
+            { "text": "لا", "correct": true },
+            { "text": "فقط إذا طلب القاضي", "correct": false },
+            { "text": "يعتمد على الظروف", "correct": false }
+        ],
+        "correctAnswer": { "text": "لا" }
+    },
+    {
+        "question": "ما هو النص الذي يحدد الشروط العامة للسندات التنفيذية؟",
+        "answers": [
+            { "text": "المادة 280", "correct": false },
+            { "text": "المادة 286", "correct": true },
+            { "text": "المادة 100", "correct": false },
+            { "text": "المادة 99", "correct": false }
+        ],
+        "correctAnswer": { "text": "المادة 286" }
+    },
+    {
+        "question": "من هو الشخص المخول بتسليم الصورة التنفيذية؟",
+        "answers": [
+            { "text": "القاضي", "correct": false },
+            { "text": "كاتب المحكمة", "correct": true },
+            { "text": "المحامي", "correct": false },
+            { "text": "المدين", "correct": false }
+        ],
+        "correctAnswer": { "text": "كاتب المحكمة" }
+    },
+    {
+        "question": "هل يمكن للمدين تقديم طلب بإلغاء الصورة التنفيذية؟",
+        "answers": [
+            { "text": "نعم", "correct": false },
+            { "text": "لا", "correct": true },
+            { "text": "فقط إذا كان لديه محامي", "correct": false },
+            { "text": "يعتمد على القاضي", "correct": false }
+        ],
+        "correctAnswer": { "text": "لا" }
+    },
+    {
+        "question": "ما هي الحالات التي يسمح فيها القانون باستخراج صورة تنفيذية ثانية؟",
+        "answers": [
+            { "text": "في حالة ضياع الصورة الأولى", "correct": true },
+            { "text": "في حالة عدم الرضا", "correct": false },
+            { "text": "في حالة تعديل الحكم", "correct": false },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "في حالة ضياع الصورة الأولى" }
+    },
+    {
+        "question": "هل يجوز للمدين الطعن في السند التنفيذي؟",
+        "answers": [
+            { "text": "نعم", "correct": false },
+            { "text": "لا", "correct": true },
+            { "text": "فقط في بعض الحالات", "correct": false },
+            { "text": "يعتمد على القاضي", "correct": false }
+        ],
+        "correctAnswer": { "text": "لا" }
+    },
+    {
+        "question": "ما هو النص الذي يحدد الشروط الشكلية للسند التنفيذي؟",
+        "answers": [
+            { "text": "المادة 180", "correct": false },
+            { "text": "المادة 280", "correct": true },
+            { "text": "المادة 286", "correct": false },
+            { "text": "المادة 100", "correct": false }
+        ],
+        "correctAnswer": { "text": "المادة 280" }
+    },
+    {
+        "question": "كيف يتم تحديد الحق في التنفيذ؟",
+        "answers": [
+            { "text": "بوجود الحكم", "correct": false },
+            { "text": "بوجود الصورة التنفيذية", "correct": true },
+            { "text": "بوجود طعن", "correct": false },
+            { "text": "بوجود محامي", "correct": false }
+        ],
+        "correctAnswer": { "text": "بوجود الصورة التنفيذية" }
+    },
+    {
+        "question": "ما هو النص القانوني الذي يحدد صلاحية السند التنفيذية؟",
+        "answers": [
+            { "text": "المادة 180", "correct": false },
+            { "text": "المادة 280", "correct": true },
+            { "text": "المادة 286", "correct": false },
+            { "text": "المادة 100", "correct": false }
+        ],
+        "correctAnswer": { "text": "المادة 280" }
+    },
+    {
+        "question": "ما هي الإجراءات الواجب اتباعها عند فقدان الصورة التنفيذية؟",
+        "answers": [
+            { "text": "تقديم طلب للقاضي", "correct": true },
+            { "text": "الانتظار", "correct": false },
+            { "text": "تقديم شكوى للشرطة", "correct": false },
+            { "text": "لا شيء", "correct": false }
+        ],
+        "correctAnswer": { "text": "تقديم طلب للقاضي" }
+    },
+    {
+        "question": "ما هو الهدف من وجود الصورة التنفيذية؟",
+        "answers": [
+            { "text": "إثبات الهوية", "correct": false },
+            { "text": "حماية المدين", "correct": false },
+            { "text": "تسهيل الإجراءات القانونية", "correct": true },
+            { "text": "جميع ما سبق", "correct": false }
+        ],
+        "correctAnswer": { "text": "تسهيل الإجراءات القانونية" }
+    },
+    {
+        "question": "ما هو النص الذي ينظم تسليم الصورة التنفيذية؟",
+        "answers": [
+            { "text": "المادة 181", "correct": true },
+            { "text": "المادة 280", "correct": false },
+            { "text": "المادة 99", "correct": false },
+            { "text": "المادة 100", "correct": false }
+        ],
+        "correctAnswer": { "text": "المادة 181" }
+    }
+        ];
+
+        questions.sort(() => Math.random() - 0.5);
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = questions[currentQuestionIndex];
+            const questionElement = document.createElement('div');
+            questionElement.classList.add('question');
+            questionElement.innerText = currentQuestion.question;
+            questionContainer.appendChild(questionElement);
+
+            currentQuestion.answers.sort(() => Math.random() - 0.5);
+
+            currentQuestion.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.innerText = answer.text;
+                button.classList.add('answer');
+                button.addEventListener('click', () => selectAnswer(answer));
+                questionContainer.appendChild(button);
+            });
+
+            questionCountDisplay.innerText = `السؤال ${currentQuestionIndex + 1} من ${questions.length}`;
+        }
+
+        function resetState() {
+            nextButton.style.display = 'none';
+            questionContainer.innerHTML = '';
+        }
+
+        function selectAnswer(answer) {
+            const currentQuestion = questions[currentQuestionIndex];
+
+            const buttons = document.querySelectorAll('.answer');
+            buttons.forEach(button => {
+                button.disabled = true; // تعطيل الأزرار بعد الاختيار
+            });
+
+            if (answer.correct) {
+                score++;
+                scoreDisplay.innerText = `نتيجة: ${score}`;
+            } else {
+                wrongAnswers.push(currentQuestion);
+            }
+
+            buttons.forEach(button => {
+                if (button.innerText === currentQuestion.correctAnswer.text) {
+                    button.classList.add('correct');
+                } else if (button.innerText === answer.text && !answer.correct) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            nextButton.style.display = 'block';
+        }
+
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        });
+
+        function showResult() {
+            questionContainer.style.display = 'none';
+            nextButton.style.display = 'none';
+            resultContainer.style.display = 'block';
+
+            finalScoreDisplay.innerText = `نتيجتك النهائية: ${score} من ${questions.length}`;
+            resultMessage.innerText = 'انتهى الاختبار!';
+
+            if (wrongAnswers.length > 0) {
+                wrongAnswers.forEach(question => {
+                    const wrongAnswerElement = document.createElement('div');
+                    wrongAnswerElement.classList.add('wrong-answer-question');
+                    wrongAnswerElement.innerHTML = `
+                        <div>${question.question}</div>
+                        <div class="correct-answer">الإجابة الصحيحة: ${question.correctAnswer.text}</div>
+                        <ul>
+                            ${question.answers.map(ans => `<li>${ans.text}</li>`).join('')}
+                        </ul>
+                    `;
+                    wrongAnswersContainer.appendChild(wrongAnswerElement);
+                });
+            } else {
+                wrongAnswersContainer.innerHTML = '<div>لا توجد إجابات خاطئة!</div>';
+            }
+        }
+
+        showQuestion();
+    </script>
+</body>
+</html>
