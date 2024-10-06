@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الأسئلة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* منع التمرير العمودي في الجسم */
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex-grow: 1; /* يسمح للحاوية بالنمو لملء المساحة المتاحة */
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* يسمح بالتمرير داخل الحاوية */
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .score {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .question-container {
+            margin-bottom: 20px;
+        }
+
+        .question {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        .answer {
+            display: block;
+            margin: 10px auto;
+            padding: 15px;
+            font-size: 1.2em;
+            background: #e7e7e7;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 80%;
+        }
+
+        .correct {
+            background-color: green;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: red;
+            color: white;
+        }
+
+        .next-button {
+            font-size: 1.5em;
+            background-color: yellow;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            border: 2px solid #ccc;
+        }
+
+        .result-container {
+            display: none;
+        }
+
+        .result-message {
+            font-size: 2em;
+        }
+
+        .final-score {
+            font-size: 1.5em;
+        }
+
+        .wrong-answer-container {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .wrong-answer-question {
+            background-color: #ffe6e6;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 80%;
+            max-width: 400px;
+            border: 1px solid red;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .wrong-answer-question .correct-answer {
+            color: green;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>اختبار الأسئلة</h1>
+        <div id="score" class="score">نتيجة: 0</div>
+        <div id="question-count" class="question-count"></div>
+        <div id="question-container" class="question-container"></div>
+        <button id="next-button" class="next-button" style="display:none;">السؤال التالي</button>
+        <div id="result-container" class="result-container">
+            <div id="result-message" class="result-message"></div>
+            <div id="final-score" class="final-score"></div>
+            <div id="wrong-answers" class="wrong-answer-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const questionContainer = document.getElementById('question-container');
+        const scoreDisplay = document.getElementById('score');
+        const nextButton = document.getElementById('next-button');
+        const questionCountDisplay = document.getElementById('question-count');
+        const resultContainer = document.getElementById('result-container');
+        const resultMessage = document.getElementById('result-message');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const wrongAnswersContainer = document.getElementById('wrong-answers');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let wrongAnswers = [];
+        let questions = [
+        {
+        "question": "ما هي حدود نظرية الاندماج في تطبيق القانون الأجنبي؟",
+        "answers": [
+            { "text": "تندمج القوانين الأجنبية بالكامل في النظام الوطني", "correct": false },
+            { "text": "لا يمكن دمج القوانين الأجنبية", "correct": false },
+            { "text": "تندمج القوانين ولكن مع الاحتفاظ بصفاتها", "correct": true },
+            { "text": "تندمج فقط في القضايا المدنية", "correct": false }
+        ],
+        "correctAnswer": { "text": "تندمج القوانين ولكن مع الاحتفاظ بصفاتها" }
+    },
+    {
+        "question": "ما هي انتقادات نظرية الاستقبال؟",
+        "answers": [
+            { "text": "تتعارض مع الوظيفة الحقيقية لقاعدة الإسناد", "correct": true },
+            { "text": "تؤكد على ضرورة تطبيق القوانين الوطنية", "correct": false },
+            { "text": "تعزز من موقف القاضي", "correct": false },
+            { "text": "تتجاهل حقوق الأفراد", "correct": false }
+        ],
+        "correctAnswer": { "text": "تتعارض مع الوظيفة الحقيقية لقاعدة الإسناد" }
+    },
+    {
+        "question": "ما هو الأساس الذي يقوم عليه التفويض في تطبيق القانون الأجنبي؟",
+        "answers": [
+            { "text": "علم القاضي بكافة القوانين", "correct": false },
+            { "text": "السلطة الممنوحة من المشرع الوطني", "correct": true },
+            { "text": "تمسك الخصوم بالقانون", "correct": false },
+            { "text": "قواعد النظام العام", "correct": false }
+        ],
+        "correctAnswer": { "text": "السلطة الممنوحة من المشرع الوطني" }
+    },
+    {
+        "question": "كيف يمكن للقاضي أن يفسر نصوص القانون الأجنبي المتناقضة؟",
+        "answers": [
+            { "text": "يعتمد على نصوص القانون الوطني", "correct": false },
+            { "text": "يطبق الحلول القضائية السائدة", "correct": true },
+            { "text": "يختار تفسيراً عشوائياً", "correct": false },
+            { "text": "يتجاهل النصوص المتناقضة", "correct": false }
+        ],
+        "correctAnswer": { "text": "يطبق الحلول القضائية السائدة" }
+    },
+    {
+        "question": "ما هو المطلب الأساسي الذي يستند إليه الفقهاء في تأكيد الطبيعة القانونية للقانون الأجنبي؟",
+        "answers": [
+            { "text": "حقوق الأفراد المقررة", "correct": false },
+            { "text": "مبدأ السيادة", "correct": false },
+            { "text": "الاحتفاظ بالطبيعة القانونية", "correct": true },
+            { "text": "ضرورة تطبيق القوانين الوطنية", "correct": false }
+        ],
+        "correctAnswer": { "text": "الاحتفاظ بالطبيعة القانونية" }
+    },
+    {
+        "question": "كيف تتعامل محكمة النقض مع سوء تفسير القانون الأجنبي؟",
+        "answers": [
+            { "text": "تتجاهل الأمر", "correct": false },
+            { "text": "تخضعه لرقابتها", "correct": true },
+            { "text": "ترفض التدخل", "correct": false },
+            { "text": "تلزم القاضي بتصحيح الخطأ", "correct": false }
+        ],
+        "correctAnswer": { "text": "تخضعه لرقابتها" }
+    },
+    {
+        "question": "ما هي الفروق بين النظام القانوني الوطني والقانون الأجنبي في تفسير القوانين؟",
+        "answers": [
+            { "text": "لا توجد اختلافات", "correct": false },
+            { "text": "يختلفان في طريقة التطبيق فقط", "correct": false },
+            { "text": "يختلفان في المبادئ والأفكار", "correct": true },
+            { "text": "يختلفان في مصادرهما", "correct": false }
+        ],
+        "correctAnswer": { "text": "يختلفان في المبادئ والأفكار" }
+    },
+    {
+        "question": "ما هو الإجراء الذي يجب على القاضي اتخاذه عند عدم وجود نصوص قانونية واضحة؟",
+        "answers": [
+            { "text": "تجاهل القضية", "correct": false },
+            { "text": "البحث عن السلوك العام", "correct": true },
+            { "text": "تطبيق النصوص القانونية الوطنية", "correct": false },
+            { "text": "انتظار طلب الخصوم", "correct": false }
+        ],
+        "correctAnswer": { "text": "البحث عن السلوك العام" }
+    },
+    {
+        "question": "ما هو الموقف التقليدي للقضاء الفرنسي بشأن تطبيق القانون الأجنبي؟",
+        "answers": [
+            { "text": "تطبيقه من تلقاء نفسه", "correct": false },
+            { "text": "عدم تطبيقه إلا عند تمسك الخصوم", "correct": true },
+            { "text": "تجاهله", "correct": false },
+            { "text": "تطبيقه في جميع الحالات", "correct": false }
+        ],
+        "correctAnswer": { "text": "عدم تطبيقه إلا عند تمسك الخصوم" }
+    },
+    {
+        "question": "ما هو الموقف العام للقضاء الفرنسي بشأن عبء إثبات القانون الأجنبي؟",
+        "answers": [
+            { "text": "يقع على عاتق القاضي", "correct": false },
+            { "text": "يقع على عاتق الخصوم", "correct": true },
+            { "text": "لا يوجد عبء", "correct": false },
+            { "text": "يعتمد على القضية", "correct": false }
+        ],
+        "correctAnswer": { "text": "يقع على عاتق الخصوم" }
+    },
+    {
+        "question": "كيف ينظر الفقهاء في مصر إلى قاعدة الإسناد؟",
+        "answers": [
+            { "text": "كقاعدة غير ملزمة", "correct": false },
+            { "text": "كقاعدة ملزمة", "correct": true },
+            { "text": "كقاعدة اختيارية", "correct": false },
+            { "text": "كقاعدة غير مهمة", "correct": false }
+        ],
+        "correctAnswer": { "text": "كقاعدة ملزمة" }
+    },
+    {
+        "question": "ما الذي يتطلبه تطبيق القانون الأجنبي في القضاء المصري؟",
+        "answers": [
+            { "text": "تمسك الخصوم به", "correct": false },
+            { "text": "علم القاضي بمضمونه", "correct": true },
+            { "text": "عدم علم القاضي بالقانون", "correct": false },
+            { "text": "عدم الحاجة لإثباته", "correct": false }
+        ],
+        "correctAnswer": { "text": "علم القاضي بمضمونه" }
+    },
+    {
+        "question": "ما هو العائق الأساسي الذي يواجه القاضي في تطبيق القانون الأجنبي؟",
+        "answers": [
+            { "text": "جهل القاضي بالقوانين الأجنبية", "correct": true },
+            { "text": "عدم وجود نصوص قانونية", "correct": false },
+            { "text": "عدم تمسك الخصوم بالقانون", "correct": false },
+            { "text": "اختلاف الأنظمة القانونية", "correct": false }
+        ],
+        "correctAnswer": { "text": "جهل القاضي بالقوانين الأجنبية" }
+    },
+    {
+        "question": "ما هو الفرق بين إعمال قاعدة الإسناد وتفسير القانون الأجنبي؟",
+        "answers": [
+            { "text": "ليس هناك فرق", "correct": false },
+            { "text": "الأول يتعلق بالتطبيق والثاني بالتفسير", "correct": true },
+            { "text": "الثاني يتطلب علم القاضي", "correct": false },
+            { "text": "الأول لا يحتاج لتمسك الخصوم", "correct": false }
+        ],
+        "correctAnswer": { "text": "الأول يتعلق بالتطبيق والثاني بالتفسير" }
+    },
+    {
+        "question": "ما هو المطلب الثاني في المبحث الثاني؟",
+        "answers": [
+            { "text": "إعمال القانون الوطني", "correct": false },
+            { "text": "تفسير القانون الأجنبي", "correct": true },
+            { "text": "قواعد القانون الدولي", "correct": false },
+            { "text": "دور القاضي في المنازعات الوطنية", "correct": false }
+        ],
+        "correctAnswer": { "text": "تفسير القانون الأجنبي" }
+    },
+    {
+        "question": "ماذا يعني مصطلح 'القانون الأجنبي'؟",
+        "answers": [
+            { "text": "القوانين المحلية فقط", "correct": false },
+            { "text": "القوانين السارية في دول أخرى", "correct": true },
+            { "text": "القوانين الدولية", "correct": false },
+            { "text": "القوانين التي لا تطبق في الوطن", "correct": false }
+        ],
+        "correctAnswer": { "text": "القوانين السارية في دول أخرى" }
+    },
+    {
+        "question": "ما هو الغرض من قاعدة الإسناد؟",
+        "answers": [
+            { "text": "تحديد قانون واحد فقط", "correct": false },
+            { "text": "اختيار أنسب القوانين لحكم النزاع", "correct": true },
+            { "text": "تجاهل القوانين الأجنبية", "correct": false },
+            { "text": "فرض القوانين الوطنية فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "اختيار أنسب القوانين لحكم النزاع" }
+    },
+    {
+        "question": "ما هي العناصر التي تستمد منها قاعدة الإسناد قوتها؟",
+        "answers": [
+            { "text": "القوانين المحلية فقط", "correct": false },
+            { "text": "عناصر العلاقة ذاتها", "correct": true },
+            { "text": "العوامل الاقتصادية", "correct": false },
+            { "text": "العوامل السياسية", "correct": false }
+        ],
+        "correctAnswer": { "text": "عناصر العلاقة ذاتها" }
+    },
+    {
+        "question": "ما هو المبدأ الذي يلتزم به القاضي في تفسير القانون الأجنبي؟",
+        "answers": [
+            { "text": "تفسير النصوص كما هي", "correct": false },
+            { "text": "تجاهل القوانين", "correct": false },
+            { "text": "البحث عن نية المشرع", "correct": true },
+            { "text": "تطبيق القوانين الوطنية فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "البحث عن نية المشرع" }
+    },
+    {
+        "question": "ما هي النظرية التي تؤكد على الطبيعة القانونية للقانون الأجنبي؟",
+        "answers": [
+            { "text": "نظرية الفهم", "correct": false },
+            { "text": "نظرية التفرقة", "correct": false },
+            { "text": "نظرية الاندماج", "correct": true },
+            { "text": "نظرية الاستقبال", "correct": false }
+        ],
+        "correctAnswer": { "text": "نظرية الاندماج" }
+    },
+    {
+        "question": "كيف ينظر الفقهاء المصريون إلى قاعدة الإسناد؟",
+        "answers": [
+            { "text": "كقاعدة غير ملزمة", "correct": false },
+            { "text": "كقاعدة ملزمة", "correct": true },
+            { "text": "كقاعدة اختيارية", "correct": false },
+            { "text": "كقاعدة غير مهمة", "correct": false }
+        ],
+        "correctAnswer": { "text": "كقاعدة ملزمة" }
+    },
+    {
+        "question": "ما هو المطلب الأساسي الذي يستند إليه الفقهاء في تأكيد الطبيعة القانونية للقانون الأجنبي؟",
+        "answers": [
+            { "text": "حقوق الأفراد المقررة", "correct": false },
+            { "text": "مبدأ السيادة", "correct": false },
+            { "text": "الاحتفاظ بالطبيعة القانونية", "correct": true },
+            { "text": "ضرورة تطبيق القوانين الوطنية", "correct": false }
+        ],
+        "correctAnswer": { "text": "الاحتفاظ بالطبيعة القانونية" }
+    },
+    {
+        "question": "ما هو الأساس الذي يقوم عليه التفويض في تطبيق القانون الأجنبي؟",
+        "answers": [
+            { "text": "علم القاضي بكافة القوانين", "correct": false },
+            { "text": "السلطة الممنوحة من المشرع الوطني", "correct": true },
+            { "text": "تمسك الخصوم بالقانون", "correct": false },
+            { "text": "قواعد النظام العام", "correct": false }
+        ],
+        "correctAnswer": { "text": "السلطة الممنوحة من المشرع الوطني" }
+    },
+    {
+        "question": "ما هي انتقادات نظرية الاستقبال؟",
+        "answers": [
+            { "text": "تتعارض مع الوظيفة الحقيقية لقاعدة الإسناد", "correct": true },
+            { "text": "تؤكد على ضرورة تطبيق القوانين الوطنية", "correct": false },
+            { "text": "تعزز من موقف القاضي", "correct": false },
+            { "text": "تتجاهل حقوق الأفراد", "correct": false }
+        ],
+        "correctAnswer": { "text": "تتعارض مع الوظيفة الحقيقية لقاعدة الإسناد" }
+    },
+    {
+        "question": "ما هو الموقف العام للقضاء الفرنسي بشأن عبء إثبات القانون الأجنبي؟",
+        "answers": [
+            { "text": "يقع على عاتق القاضي", "correct": false },
+            { "text": "يقع على عاتق الخصوم", "correct": true },
+            { "text": "لا يوجد عبء", "correct": false },
+            { "text": "يعتمد على القضية", "correct": false }
+        ],
+        "correctAnswer": { "text": "يقع على عاتق الخصوم" }
+    },
+    {
+        "question": "كيف ينظر الفقهاء في مصر إلى قاعدة الإسناد؟",
+        "answers": [
+            { "text": "كقاعدة غير ملزمة", "correct": false },
+            { "text": "كقاعدة ملزمة", "correct": true },
+            { "text": "كقاعدة اختيارية", "correct": false },
+            { "text": "كقاعدة غير مهمة", "correct": false }
+        ],
+        "correctAnswer": { "text": "كقاعدة ملزمة" }
+    },
+    {
+        "question": "ما الذي يتطلبه تطبيق القانون الأجنبي في القضاء المصري؟",
+        "answers": [
+            { "text": "تمسك الخصوم به", "correct": false },
+            { "text": "علم القاضي بمضمونه", "correct": true },
+            { "text": "عدم علم القاضي بالقانون", "correct": false },
+            { "text": "عدم الحاجة لإثباته", "correct": false }
+        ],
+        "correctAnswer": { "text": "علم القاضي بمضمونه" }
+    },
+    {
+        "question": "ما هو الأساس الذي يقوم عليه التفويض في تطبيق القانون الأجنبي؟",
+        "answers": [
+            { "text": "علم القاضي بكافة القوانين", "correct": false },
+            { "text": "السلطة الممنوحة من المشرع الوطني", "correct": true },
+            { "text": "تمسك الخصوم بالقانون", "correct": false },
+            { "text": "قواعد النظام العام", "correct": false }
+        ],
+        "correctAnswer": { "text": "السلطة الممنوحة من المشرع الوطني" }
+    },
+    {
+        "question": "ما هو العائق الأساسي الذي يواجه القاضي في تطبيق القانون الأجنبي؟",
+        "answers": [
+            { "text": "جهل القاضي بالقوانين الأجنبية", "correct": true },
+            { "text": "عدم وجود نصوص قانونية", "correct": false },
+            { "text": "عدم تمسك الخصوم بالقانون", "correct": false },
+            { "text": "اختلاف الأنظمة القانونية", "correct": false }
+        ],
+        "correctAnswer": { "text": "جهل القاضي بالقوانين الأجنبية" }
+    },
+    {
+        "question": "ما هو الفرق بين إعمال قاعدة الإسناد وتفسير القانون الأجنبي؟",
+        "answers": [
+            { "text": "ليس هناك فرق", "correct": false },
+            { "text": "الأول يتعلق بالتطبيق والثاني بالتفسير", "correct": true },
+            { "text": "الثاني يتطلب علم القاضي", "correct": false },
+            { "text": "الأول لا يحتاج لتمسك الخصوم", "correct": false }
+        ],
+        "correctAnswer": { "text": "الأول يتعلق بالتطبيق والثاني بالتفسير" }
+    },
+    {
+        "question": "ما هو المطلب الثاني في المبحث الثاني؟",
+        "answers": [
+            { "text": "إعمال القانون الوطني", "correct": false },
+            { "text": "تفسير القانون الأجنبي", "correct": true },
+            { "text": "قواعد القانون الدولي", "correct": false },
+            { "text": "دور القاضي في المنازعات الوطنية", "correct": false }
+        ],
+        "correctAnswer": { "text": "تفسير القانون الأجنبي" }
+    },
+    {
+        "question": "ماذا يعني مصطلح \"القانون الأجنبي\"؟",
+        "answers": [
+            { "text": "القوانين المحلية فقط", "correct": false },
+            { "text": "القوانين السارية في دول أخرى", "correct": true },
+            { "text": "القوانين الدولية", "correct": false },
+            { "text": "القوانين التي لا تطبق في الوطن", "correct": false }
+        ],
+        "correctAnswer": { "text": "القوانين السارية في دول أخرى" }
+    },
+    {
+        "question": "ما هو الغرض من قاعدة الإسناد؟",
+        "answers": [
+            { "text": "تحديد قانون واحد فقط", "correct": false },
+            { "text": "اختيار أنسب القوانين لحكم النزاع", "correct": true },
+            { "text": "تجاهل القوانين الأجنبية", "correct": false },
+            { "text": "فرض القوانين الوطنية فقط", "correct": false }
+        ],
+        "correctAnswer": { "text": "اختيار أنسب القوانين لحكم النزاع" }
+    },
+    {
+        "question": "ما هي العناصر التي تستمد منها قاعدة الإسناد قوتها؟",
+        "answers": [
+            { "text": "القوانين المحلية فقط", "correct": false },
+            { "text": "عناصر العلاقة ذاتها", "correct": true },
+            { "text": "العوامل الاقتصادية", "correct": false },
+            { "text": "العوامل السياسية", "correct": false }
+        ],
+        "correctAnswer": { "text": "عناصر العلاقة ذاتها" }
+    }
+        ];
+
+        questions.sort(() => Math.random() - 0.5);
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = questions[currentQuestionIndex];
+            const questionElement = document.createElement('div');
+            questionElement.classList.add('question');
+            questionElement.innerText = currentQuestion.question;
+            questionContainer.appendChild(questionElement);
+
+            currentQuestion.answers.sort(() => Math.random() - 0.5);
+
+            currentQuestion.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.innerText = answer.text;
+                button.classList.add('answer');
+                button.addEventListener('click', () => selectAnswer(answer));
+                questionContainer.appendChild(button);
+            });
+
+            questionCountDisplay.innerText = `السؤال ${currentQuestionIndex + 1} من ${questions.length}`;
+        }
+
+        function resetState() {
+            nextButton.style.display = 'none';
+            questionContainer.innerHTML = '';
+        }
+
+        function selectAnswer(answer) {
+            const currentQuestion = questions[currentQuestionIndex];
+
+            const buttons = document.querySelectorAll('.answer');
+            buttons.forEach(button => {
+                button.disabled = true; // تعطيل الأزرار بعد الاختيار
+            });
+
+            if (answer.correct) {
+                score++;
+                scoreDisplay.innerText = `نتيجة: ${score}`;
+            } else {
+                wrongAnswers.push(currentQuestion);
+            }
+
+            buttons.forEach(button => {
+                if (button.innerText === currentQuestion.correctAnswer.text) {
+                    button.classList.add('correct');
+                } else if (button.innerText === answer.text && !answer.correct) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            nextButton.style.display = 'block';
+        }
+
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        });
+
+        function showResult() {
+            questionContainer.style.display = 'none';
+            nextButton.style.display = 'none';
+            resultContainer.style.display = 'block';
+
+            finalScoreDisplay.innerText = `نتيجتك النهائية: ${score} من ${questions.length}`;
+            resultMessage.innerText = 'انتهى الاختبار!';
+
+            if (wrongAnswers.length > 0) {
+                wrongAnswers.forEach(question => {
+                    const wrongAnswerElement = document.createElement('div');
+                    wrongAnswerElement.classList.add('wrong-answer-question');
+                    wrongAnswerElement.innerHTML = `
+                        <div>${question.question}</div>
+                        <div class="correct-answer">الإجابة الصحيحة: ${question.correctAnswer.text}</div>
+                        <ul>
+                            ${question.answers.map(ans => `<li>${ans.text}</li>`).join('')}
+                        </ul>
+                    `;
+                    wrongAnswersContainer.appendChild(wrongAnswerElement);
+                });
+            } else {
+                wrongAnswersContainer.innerHTML = '<div>لا توجد إجابات خاطئة!</div>';
+            }
+        }
+
+        showQuestion();
+    </script>
+</body>
+</html>
